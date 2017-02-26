@@ -41,6 +41,7 @@ h1, h2, h3, h4, h5, h6 {
 
 body {
     font-size: 13pt;
+    color: #222222;
     font-family: "arial";
 }
 
@@ -80,7 +81,25 @@ body {
     }
 }
 
+#LeftSideArea {
+    position: fixed;
+    top: 110px;
+    bottom: 50px;
+    left: 0px;
+    width: 25%;
+    
+    overflow-x:hidden;
+}
+
+#MainPageBottomAppearingOnSmallScreen{
+    display: none;
+    margin: 0px;
+    padding: 2em 0 0 0;
+    background-color: white;
+}
+
 #MainArea {
+    margin-left: 25%;
     margin-top: 110px;
     margin-bottom: 50px;
     background-color: #F8F8FF;
@@ -242,7 +261,7 @@ body {
     height: 80%;
     top: 10%;
     left: 10%;
-    pointer-events : none;
+    pointer-events: none;
 }
 
 @keyframes QuickLookAreaSlideInFromBottomRight {
@@ -300,7 +319,7 @@ body {
 }
 
 .ChildDetailButton {
-    background-color: white;
+    background-color: rgba(0, 128, 0, 0);
     border-radius: 100% 20% 100% 20% / 50% 20% 50% 20%;
     border: solid 2px green;
     animation-duration: 1s;
@@ -313,26 +332,16 @@ body {
 }
 
     .ChildDetailButton:hover {
-        background-color: green;
+        background-color: rgba(0, 128, 0, 255);
     }
 
 @keyframes ChildDetailButtonOutlined {
     from {
-        background-color: green;
+        background-color: rgba(0, 128, 0, 255);
     }
 
     to {
-        background-color: white;
-    }
-}
-
-@keyframes ChildDetailButtonOutlined {
-    from {
-        background-color: green;
-    }
-
-    to {
-        background-color: white;
+        background-color: rgba(0, 128, 0, 0);
     }
 }
 
@@ -394,6 +403,89 @@ p.ResizeImage {
     margin: 0.5em auto;
 }
 
+ul.Navi {
+    font-size: 0.875em;
+    list-style: none;
+    margin-left: 10px;
+    padding: 0px;
+    
+}
+
+    ul.Navi ul {
+        margin: 0 0 0 0.8em;
+        padding: 0px;
+        list-style: none;
+    }
+
+    ul.Navi li {
+        margin: 0px;
+        padding: 0px;
+        list-style: none;
+    }
+
+    ul.Navi a {
+        color: #BBBBBB;
+        text-decoration: none;
+        display: block;
+        border: solid white 2px;
+        padding: 0.1em 0 0.1em 0.5em;
+    }
+
+        ul.Navi a.Selected {
+            color: #444444;
+            background-color: #EEEEEE;
+        }
+
+        ul.Navi a:hover {
+            color: #444444;
+            text-decoration: underline;
+            background-color: #EEEEEE;
+        }
+
+
+table.list {
+    width: 100%;
+    margin: 0px 0 30px 0;
+    font-size: 0.875em;
+}
+
+    table.list tbody {
+        border-top: #e6e6e6 0px solid;
+    }
+
+    table.list tr {
+        -webkit-transition: background .15s;
+        -moz-transition: background .15s;
+        -ms-transition: background .15s;
+        -o-transition: background .15s;
+        transition: background .15s;
+    }
+
+        table.list tr:nth-child(odd) {
+            background: #f8f8f8;
+        }
+
+        table.list tr:hover {
+            outline: #00cccc 1px solid;
+        }
+
+    table.list td {
+        vertical-align: top;
+        padding: 7px 10px;
+    }
+
+        table.list td.lbl {
+            width: 18%;
+        }
+
+        table.list td.desc {
+            width: 82%;
+        }
+
+        table.list td.name {
+            font-weight: 700;
+        }
+
 /*
     memo:
         SmartPhoneWidth = max-width: 479px
@@ -417,5 +509,17 @@ p.ResizeImage {
 
     .Title {
         font-size: 14pt;
+    }
+
+    #MainArea {
+        margin-left: auto;
+    }
+
+    #LeftSideArea {
+        display: none;
+    }
+
+    #MainPageBottomAppearingOnSmallScreen{
+        display:block;
     }
 }

@@ -295,21 +295,21 @@ class Content
     //StartTag一覧
     private static $startTagNameList =
     [
-        "Parent" => "<WPV_Parent>",
-        "Children" => "<WPV_Children>",
-        "Child" => "<WPV_Child>",
-        "Title" => "<WPV_Title>",
-        "Abstract" => "<WPV_Abstract>"
+        "Parent" => "<CDB_Parent>",
+        "Children" => "<CDB_Children>",
+        "Child" => "<CDB_Child>",
+        "Title" => "<CDB_Title>",
+        "Abstract" => "<CDB_Abstract>"
     ];
 
     //EndTag一覧
     private static $endTagNameList =
     [
-        "Parent" => "</WPV_Parent>",
-        "Children" => "</WPV_Children>",
-        "Child" => "</WPV_Child>",
-        "Title" => "</WPV_Title>",
-        "Abstract" => "</WPV_Abstract>"
+        "Parent" => "</CDB_Parent>",
+        "Children" => "</CDB_Children>",
+        "Child" => "</CDB_Child>",
+        "Title" => "</CDB_Title>",
+        "Abstract" => "</CDB_Abstract>"
     ];
 
     private $path = "";
@@ -469,10 +469,16 @@ class Content
         return $this->abstract;
     }
 
-    //このContentが持つContents取得
+    //このContentが持つ子Contents取得
     public function GetChildren()
     {
         return $this->children;
+    }
+
+    //このContentが持つ子Contentsの数
+    public function GetChildrenCount()
+    {
+        return count($this->children);
     }
 
     //このContentのRootContent取得

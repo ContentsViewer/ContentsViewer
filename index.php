@@ -141,6 +141,21 @@
         echo '</div>';
         exit();
     }
+    //---Navigator作成---------------------------------------------------------------------------------------------------
+    $navigator = "";
+    $parentsCount = count($parents);
+    if($parentsCount > 0){
+        $navigator.= "<ul class='Navi'>";
+        CreateNavHelper($parents, count($parents)- 1, $currentContent, $children, $navigator);
+        $navigator.= "</ul>";
+    }
+
+    //---LeftSideArea----------------------------------------------------------------------------------------------------
+
+    echo "<div id ='LeftSideArea'>";
+    echo $navigator;
+    echo "</div>";
+
 
     //---MainArea--------------------------------------------------------------------------------------------------------
     echo '<div id="MainArea">';
@@ -206,6 +221,12 @@
     }
     echo '</div>';
 
+    //---MainPageBottomAppearingOnSmallScreen----------------------------------
+    echo "<div id='MainPageBottomAppearingOnSmallScreen'>";
+
+    echo $navigator;
+
+    echo "</div>";
     echo '</div>';
 
     //---TopArea--------------------------------------------------------------------------------------------------------
@@ -299,15 +320,70 @@
     </div>
     <?php
     }
-
-    //---QuickLookArea-------------------------------------------------------
+    //-----QuickLookArea---------------------------------------------------------
     ?>
     <div id='QuickLookArea'></div>
+
     <?php
     //contentPathからaタグで用いられる参照を返します
     function CreateHREF($contentPath)
     {
         return '/?contentPath=' . $contentPath;
+    }
+
+    function CreateNavHelper(&$parents, $parentsIndex, &$currentContent, &$children,  &$navigator){
+        $childrenCount = $parents[$parentsIndex]->GetChildrenCount();
+
+        $navigator.=  "<li>";
+        $navigator.=  "<a class = 'Selected' href='" . CreateHREF($parents[$parentsIndex]->GetPath()) . "'>" . $parents[$parentsIndex]->GetTitle() . "</a>";
+        $navigator.=  "</li>";
+
+        $navigator.=  "<ul>";
+        if($parentsIndex == 0){
+            $currentContentIndex = $currentContent->GetIndex();
+            for($i = 0; $i < $childrenCount; $i++){
+
+                $child = $parents[$parentsIndex]->GetChild($i);
+
+                if($i == $currentContentIndex){
+
+                    $navigator.=  "<li>";
+                    $navigator.=  "<a class = 'Selected' href='" . CreateHREF($child->GetPath()) . "'>" . $child->GetTitle() . "</a>";
+                    $navigator.=  "</li>";
+
+                    $navigator.="<ul>";
+                    foreach($children as $c){
+
+                        $navigator.=  "<li>";
+                        $navigator.=  "<a href='" . CreateHREF($c->GetPath()) . "'>" . $c->GetTitle() . "</a>";
+                        $navigator.=  "</li>";
+                    }
+                    $navigator.="</ul>";
+                }
+                else{
+                    $navigator.=  "<li>";
+                    $navigator.=  "<a href='" . CreateHREF($child->GetPath()) . "'>" . $child->GetTitle() . "</a>";
+                    $navigator.=  "</li>";
+                }
+            }
+        }
+        else{
+            $nextParentIndex = $parents[$parentsIndex - 1]->GetIndex();
+            for($i = 0; $i < $childrenCount; $i++){
+
+                if($i == $nextParentIndex){
+                    CreateNavHelper($parents, $parentsIndex-1, $currentContent, $children, $navigator);
+                }
+                else{
+                    $child = $parents[$parentsIndex]->GetChild($i);
+                    $navigator.=  "<li>";
+                    $navigator.=  "<a href='" . CreateHREF($child->GetPath()) . "'>" . $child->GetTitle() . "</a>";
+                    $navigator.=  "</li>";
+                }
+            }
+        }
+        $navigator.=  "</ul>";
+        return;
     }
     ?>
 </body>
