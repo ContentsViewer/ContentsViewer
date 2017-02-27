@@ -45,6 +45,37 @@ body {
     font-family: "arial";
 }
 
+.SubSection {
+    position: relative;
+    padding: .25em 0 .5em .75em;
+    border-left: 6px solid #ccc;
+}
+
+    .SubSection::before {
+        position: absolute;
+        left: -6px;
+        bottom: 0;
+        content: '';
+        width: 6px;
+        height: 50%;
+        background-color: #3498db;
+    }
+
+    .SubSection::after {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        content: '';
+        width: 100%;
+        height: 0;
+        border-bottom: 1px solid #ccc;
+    }
+
+.SubSubSection {
+	padding: .25em 0 .25em .75em;
+	border-left: 6px solid #ccc;
+}
+
 #HeaderArea {
     position: fixed;
     z-index: 100;
@@ -82,16 +113,17 @@ body {
 }
 
 #LeftSideArea {
+    margin: 0;
+    padding: 0;
     position: fixed;
-    top: 110px;
+    top: 120px;
     bottom: 50px;
     left: 0px;
     width: 25%;
-    
-    overflow-x:hidden;
+    overflow-x: hidden;
 }
 
-#MainPageBottomAppearingOnSmallScreen{
+#MainPageBottomAppearingOnSmallScreen {
     display: none;
     margin: 0px;
     padding: 2em 0 0 0;
@@ -110,7 +142,7 @@ body {
     top: 0px;
     left: 0px;
     background-color: rgba(255, 255, 255, 0.7);
-    padding: 0px 0px 0px 10px;
+    padding: 0px 10px 0px 10px;
     margin: 0px;
 }
 
@@ -356,7 +388,7 @@ body {
 }
 
 .Title {
-    font-size: 18pt;
+    font-size: 1.4em;
     padding-left: 10px;
     margin-top: 15px;
     margin-bottom: 0px;
@@ -406,9 +438,9 @@ p.ResizeImage {
 ul.Navi {
     font-size: 0.875em;
     list-style: none;
+    margin-top: 5px;
     margin-left: 10px;
     padding: 0px;
-    
 }
 
     ul.Navi ul {
@@ -486,6 +518,24 @@ table.list {
             font-weight: 700;
         }
 
+@media screen and (max-width: 1000px) {
+
+    body {
+        -webkit-text-size-adjust: 100%;
+        font-size: 12pt;
+    }
+
+    ul {
+        margin: 0 0 0 1em;
+        padding: 0;
+    }
+
+    ol {
+        margin: 0 0 0 1.5em;
+        padding: 0;
+    }
+}
+
 /*
     memo:
         SmartPhoneWidth = max-width: 479px
@@ -506,10 +556,10 @@ table.list {
         margin: 0 0 0 1.5em;
         padding: 0;
     }
+}
 
-    .Title {
-        font-size: 14pt;
-    }
+
+@media screen and (max-width: 500px) {
 
     #MainArea {
         margin-left: auto;
@@ -519,7 +569,7 @@ table.list {
         display: none;
     }
 
-    #MainPageBottomAppearingOnSmallScreen{
-        display:block;
+    #MainPageBottomAppearingOnSmallScreen {
+        display: block;
     }
 }
