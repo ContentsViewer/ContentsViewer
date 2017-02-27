@@ -72,8 +72,8 @@ body {
     }
 
 .SubSubSection {
-	padding: .25em 0 .25em .75em;
-	border-left: 6px solid #ccc;
+    padding: .25em 0 .25em .75em;
+    border-left: 6px solid #ccc;
 }
 
 #HeaderArea {
@@ -84,31 +84,31 @@ body {
     background-color: green;
     margin: 0px;
     border: 0px;
-    padding: 0px 0px 5px 10px;
+    padding: 0px 0px 5px 5px;
     top: 0px;
     right: 0px;
-    left: 0px;
     height: 1em;
-    white-space: nowrap;
+    width:100%;
+    overflow: hidden;
 }
 
 @keyframes HeaderAreaDisappear {
-    from {
-        left: 0%;
+     from {
+        width: 100%;
     }
 
     to {
-        left: 100%;
+        width: 0px;
     }
 }
 
 @keyframes HeaderAreaAppear {
     from {
-        left: 100%;
+        width: 0px;
     }
 
     to {
-        left: 0%;
+        width: 100%;
     }
 }
 
@@ -433,7 +433,14 @@ p.ResizeImage {
     display: block;
     text-align: center;
     margin: 0.5em auto;
+    -webkit-transition: all .3s;
+    transition: all .3s;
 }
+
+
+    .LinkButtonBlock:hover {
+        background-color: #59b1eb;
+    }
 
 ul.Navi {
     font-size: 0.875em;

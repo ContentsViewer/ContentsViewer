@@ -22,7 +22,7 @@ function OnScroll() {
         if (!doseHideHeader) {
             headerArea.style.animationName = "HeaderAreaDisappear";
             headerArea.style.animationDuration = "1s";
-            headerArea.style.left = "100%";
+            headerArea.style.width = "0px";
 
             topArea.style.animationName = "TopAreaSlideUp";
             topArea.style.animationDuration = "1s";
@@ -35,7 +35,7 @@ function OnScroll() {
         if (doseHideHeader) {
             headerArea.style.animationName = "HeaderAreaAppear";
             headerArea.style.animationDuration = "1s";
-            headerArea.style.left = "0%";
+            headerArea.style.width = "100%";
 
             topArea.style.animationName = "TopAreaSlideDown";
             topArea.style.animationDuration = "1s";
