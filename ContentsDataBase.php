@@ -299,7 +299,8 @@ class Content
         "Children" => "<CDB_Children>",
         "Child" => "<CDB_Child>",
         "Title" => "<CDB_Title>",
-        "Abstract" => "<CDB_Abstract>"
+        "Abstract" => "<CDB_Abstract>",
+        "CreatedAt"=>"<CDB_CreatedAt>"
     ];
 
     //EndTag一覧
@@ -309,8 +310,11 @@ class Content
         "Children" => "</CDB_Children>",
         "Child" => "</CDB_Child>",
         "Title" => "</CDB_Title>",
-        "Abstract" => "</CDB_Abstract>"
+        "Abstract" => "</CDB_Abstract>",
+        "CreatedAt"=>"</CDB_CreatedAt>"
     ];
+
+    private static $dateFormat = "Y/m/d";
 
     private $path = "";
     private $title = "";
@@ -325,7 +329,8 @@ class Content
 
     private $isFinal = false;
     private $isRoot = false;
-    private $lastUpdated = "";
+    private $updatedAt = "";
+    private $createdAt = "";
 
     public function EncodeToContentData()
     {
@@ -338,7 +343,8 @@ class Content
             "children" => $this->children,
             "isFinal" => $this->isFinal,
             "isRoot" => $this->isRoot,
-            "lastUpdated" => $this->lastUpdated
+            "updatedAt" => $this->updatedAt,
+            "createdAt"=> $this->createdAt
             );
 
         return $data;
@@ -437,17 +443,28 @@ class Content
             $this->isRoot = $temp;
         }
 
-        $temp = $contentData["lastUpdated"];
+        $temp = $contentData["updatedAt"];
         if(is_null($temp))
         {
-            Debug::LogWarning("[DecodeFromContentData] Fail > Key'lastUpdated'");
+            Debug::LogWarning("[DecodeFromContentData] Fail > Key'updatedAt'");
             $allTrue = false;
         }
         else
         {
-            $this->lastUpdated = $temp;
+            $this->updatedAt = $temp;
         }
 
+
+        $temp = $contentData["createdAt"];
+        if(is_null($temp))
+        {
+            Debug::LogWarning("[DecodeFromContentData] Fail > Key'createdAt'");
+            $allTrue = false;
+        }
+        else
+        {
+            $this->createdAt = $temp;
+        }
         return $allTrue;
     }
 
@@ -499,10 +516,14 @@ class Content
         return $this->isRoot;
     }
 
-    //このContentが持つlastUpdate取得
-    public function GetLastUpdated()
+    //このContentが持つupdatedAt取得
+    public function UpdatedAt()
     {
-        return $this->lastUpdated;
+        return $this->updatedAt;
+    }
+
+    public function CreatedAt(){
+        return $this->createdAt;
     }
 
     //このContentが何番目の子供か調べます
@@ -603,7 +624,7 @@ class Content
             return false;
         }
         $this->path = $filePath;
-        $this->lastUpdated = date("m.d.Y", filemtime($filePath));
+        $this->updatedAt = date(static::$dateFormat, filemtime($filePath));
 
         $dataList = $this->ToDataList($data);
 
@@ -655,6 +676,7 @@ class Content
 
                 case static::$startTagNameList["Title"]:
                 case static::$startTagNameList["Abstract"]:
+                case static::$startTagNameList["CreatedAt"]:
                     array_push($elements, array($str, ""));
                     break;
 
@@ -693,6 +715,17 @@ class Content
                         return false;
                     }
                     $this->abstract = $element[1];
+
+                    break;
+
+                case static::$endTagNameList["CreatedAt"]:
+                    $element = array_pop($elements);
+                    if($this->TagChecker($element[0], "CreatedAt") === false)
+                    {
+                        return false;
+                    }
+
+                    $this->createdAt = date(static::$dateFormat,strtotime($element[1]));
 
                     break;
 

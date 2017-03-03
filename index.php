@@ -34,7 +34,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <link rel="shortcut icon" href="favicon.ico" type="image/vnd.microsoft.icon" />
+    <link rel="shortcut icon" href="Common/favicon.ico" type="image/vnd.microsoft.icon" />
     <!-- ビューポートの設定 -->
     <meta name="viewport" content="width=device-width,initial-scale=1" />
 
@@ -159,8 +159,9 @@
     echo '<div id="MainArea">';
 
     //最終更新欄
-    echo '<div id="LastUpdatedField" class="LastUpdated">';
-    echo '最終更新日: ' . $currentContent->GetLastUpdated();
+    echo '<div class="FileDateField">';
+    echo "<img src='Common/CreatedAtStampA.png' alt='公開日'>: ". $currentContent->CreatedAt() 
+        . " <img src='Common/UpdatedAtStampA.png' alt='更新日'>: " . $currentContent->UpdatedAt();
     echo '</div>';
 
     //概要欄

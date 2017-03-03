@@ -395,9 +395,13 @@ body {
     margin-bottom: 0px;
 }
 
-.LastUpdated {
+.FileDateField {
+    height: 1em;
     text-align: right;
     margin: 1.12em 0;
+}
+.FileDateField img{
+    height: 100%;
 }
 
 .Abstract {
