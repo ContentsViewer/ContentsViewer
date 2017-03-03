@@ -34,7 +34,7 @@
 
 <head>
     <meta charset="UTF-8" />
-
+    <link rel="shortcut icon" href="favicon.ico" type="image/vnd.microsoft.icon" />
     <!-- ビューポートの設定 -->
     <meta name="viewport" content="width=device-width,initial-scale=1" />
 
@@ -143,12 +143,10 @@
     }
     //---Navigator作成---------------------------------------------------------------------------------------------------
     $navigator = "";
-    $parentsCount = count($parents);
-    if($parentsCount > 0){
-        $navigator.= "<ul class='Navi'>";
-        CreateNavHelper($parents, count($parents)- 1, $currentContent, $children, $navigator);
-        $navigator.= "</ul>";
-    }
+    $navigator.= "<ul class='Navi'>";
+    CreateNavHelper($parents, count($parents)- 1, $currentContent, $children, $navigator);
+    $navigator.= "</ul>";
+
 
     //---LeftSideArea----------------------------------------------------------------------------------------------------
 
@@ -332,6 +330,24 @@
     }
 
     function CreateNavHelper(&$parents, $parentsIndex, &$currentContent, &$children,  &$navigator){
+        if($parentsIndex < 0){
+
+            $navigator.=  "<li>";
+            $navigator.=  "<a class = 'Selected' href='" . CreateHREF($currentContent->GetPath()) . "'>" . $currentContent->GetTitle() . "</a>";
+            $navigator.=  "</li>";
+
+            $navigator.="<ul>";
+            foreach($children as $c){
+
+                $navigator.=  "<li>";
+                $navigator.=  "<a href='" . CreateHREF($c->GetPath()) . "'>" . $c->GetTitle() . "</a>";
+                $navigator.=  "</li>";
+            }
+            $navigator.="</ul>";
+
+            return;
+        }
+
         $childrenCount = $parents[$parentsIndex]->GetChildrenCount();
 
         $navigator.=  "<li>";
