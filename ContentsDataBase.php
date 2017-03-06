@@ -618,6 +618,9 @@ class Content
             return false;
         }
 
+        //パス正規化
+        $filePath = $this->RelativePath(realpath($filePath));
+        
         $data = $this->ReadFile($filePath);
         if($data === false)
         {

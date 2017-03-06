@@ -128,7 +128,9 @@
     ?>
 </head>
 <body>
-    <div id="HeaderArea">ContentsViewer</div>
+    <div id="HeaderArea">
+        <a href="./?contentPath=./Contents/Root.html">ContentsViewer</a>
+    </div>
     <?php
 
     //===コード==================================================
@@ -160,8 +162,8 @@
 
     //最終更新欄
     echo '<div class="FileDateField">';
-    echo "<img src='Common/CreatedAtStampA.png' alt='公開日'>: ". $currentContent->CreatedAt() 
-        . " <img src='Common/UpdatedAtStampA.png' alt='更新日'>: " . $currentContent->UpdatedAt();
+    echo "<img src='Common/CreatedAtStampA.png' alt='公開日'>: ". $currentContent->CreatedAt()
+    . " <img src='Common/UpdatedAtStampA.png' alt='更新日'>: " . $currentContent->UpdatedAt();
     echo '</div>';
 
     //概要欄
@@ -186,13 +188,19 @@
         {
 
             echo "<div style='width:100%; display: table'>";
+
+            //A-----
             echo "<div style='display: table-cell; width: 90%;'>";
 
             echo '<a class="LinkButtonBlock" href ="'.CreateHREF($children[$i]->GetPath()).'" ">';
             echo $children[$i]->GetTitle();
             echo '</a>';
 
-            echo "</div><div class='ChildDetailButton' style='display:table-cell;  width:10%;' "
+            echo "</div>";
+            //---
+
+            //B-----
+            echo "<div class='ChildDetailButton' style='display:table-cell;  width:10%;' "
             .'onmouseover="QuickLookMouse('
             ."'ChildContent"
             .$i
@@ -206,14 +214,17 @@
             .'onmouseout="ExitQuickLookMouse()" '
             .'ontouchend="ExitQuickLookTouch()"'
             ."></div>";
+            //---
 
+            //C-----
             echo "<div class='ContentContainer' "
             ."id='ChildContent".$i."Container"."'"
             .">";
             echo "<h1>" . $children[$i]->GetTitle(). "</h1>";
-            echo "<p>" . $children[$i]->GetAbstract(). "</p>";
-            echo "<p>" . $children[$i]->GetRootContent(). "</p>";
+            echo "<div>" . $children[$i]->GetAbstract(). "</div>";
+            echo "<div>" . $children[$i]->GetRootContent(). "</div>";
             echo "</div>";
+            //---
 
             echo "</div>";
         }
@@ -280,8 +291,8 @@
             echo '</a>';
             echo "<div id = 'RightContentContainer' class='ContentContainer'>";
             echo "<h1>" . $rightContent->GetTitle(). "</h1>";
-            echo "<p>" . $rightContent->GetAbstract(). "</p>";
-            echo "<p>" . $rightContent->GetRootContent(). "</p>";
+            echo "<div>" . $rightContent->GetAbstract(). "</div>";
+            echo "<div>" . $rightContent->GetRootContent(). "</div>";
             echo "</div>";
         }
         ?>
@@ -311,8 +322,8 @@
             echo '</a>';
             echo "<div id = 'LeftContentContainer' class='ContentContainer'>";
             echo "<h1>" . $leftContent->GetTitle(). "</h1>";
-            echo "<p>" . $leftContent->GetAbstract(). "</p>";
-            echo "<p>" . $leftContent->GetRootContent(). "</p>";
+            echo "<div>" . $leftContent->GetAbstract(). "</div>";
+            echo "<div>" . $leftContent->GetRootContent(). "</div>";
             echo "</div>";
         }
         ?>
