@@ -27,6 +27,9 @@
     2.18.2017:
         QuickLookModeを追加
         名前の変更
+
+    3.18.2017:
+        titleの命名規則変更; SEO対策
 -->
 
 <!DOCTYPE html>
@@ -108,11 +111,11 @@
 
         //title作成
         $title = "";
+        $title .= $currentContent->GetTitle();
         if(isset($parents[0]))
         {
-            $title .= $parents[0]->GetTitle() . "/";
+            $title .=" | " . $parents[0]->GetTitle();
         }
-        $title .= $currentContent->GetTitle();
 
         echo "<title>".$title."</title>";
     }
