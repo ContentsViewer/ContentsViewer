@@ -1,6 +1,6 @@
 <!-- 
 最終更新日:
-    2.18.2017
+    2017/8/25
 
 説明:
     ContentDataBaseが持つContent情報をWebPageにします.
@@ -30,6 +30,10 @@
 
     3.18.2017:
         titleの命名規則変更; SEO対策
+
+    2017/8/25:
+        一部リンク参照で属性名のパターン不一致問題を修正
+        目次機能を追加; コンテンツ内にあるセクションを自動で取得する
 -->
 
 <!DOCTYPE html>
@@ -75,7 +79,10 @@
         $childrenPathList = $currentContent->GetChildren();
         for($i = 0; $i < count($childrenPathList); $i++)
         {
-            array_push($children, $currentContent->GetChild($i));
+            $child = $currentContent->GetChild($i);
+            if($child !== false){
+                array_push($children, $child);
+            }
         }
 
         //Parentsの取得
@@ -148,15 +155,24 @@
     }
     //---Navigator作成---------------------------------------------------------------------------------------------------
     $navigator = "";
-    $navigator.= "<ul class='Navi'>";
+    $navigator.= "<div class='Navi'>";
+    $navigator .= "<ul>";
     CreateNavHelper($parents, count($parents)- 1, $currentContent, $children, $navigator);
-    $navigator.= "</ul>";
+    $navigator .= "</ul>";
+    $navigator.= "</div>";
 
 
     //---LeftSideArea----------------------------------------------------------------------------------------------------
 
     echo "<div id ='LeftSideArea'>";
     echo $navigator;
+    echo "</div>";
+
+
+    // --- IndexArea ----------------------------------------------------------------------------
+    echo "<div id = 'IndexArea'>";
+    echo "Index";
+    echo "<div class='Navi'></div>";
     echo "</div>";
 
 
@@ -169,10 +185,15 @@
     . " <img src='Common/UpdatedAtStampA.png' alt='更新日'>: " . $currentContent->UpdatedAt();
     echo '</div>';
 
-    //概要欄
+    // 概要欄
     echo '<div id="AbstractField" class="Abstract">';
     echo $currentContent->GetAbstract();
     echo '</div>';
+    
+    // 目次欄(小画面で表示される)
+    echo "<div id = 'IndexAreaOnSmallScreen'>";
+    echo "Index";
+    echo "</div>";
 
     //本編
     echo '<div id="RootContentField" class="RootContent">';
@@ -183,54 +204,47 @@
     echo '<div id="ChildrenField">';
     for($i = 0; $i < count($children); $i++)
     {
-        if($children[$i]===false)
-        {
-            echo '<p class="LinkButtonBlock">Error; 存在しないコンテンツです</p>';
-        }
-        else
-        {
+        echo "<div style='width:100%; display: table'>";
 
-            echo "<div style='width:100%; display: table'>";
+        //A-----
+        echo "<div style='display: table-cell; width: 90%;'>";
 
-            //A-----
-            echo "<div style='display: table-cell; width: 90%;'>";
+        echo '<a class="LinkButtonBlock" href ="'.CreateHREF($children[$i]->GetPath()).'">';
+        echo $children[$i]->GetTitle();
+        echo '</a>';
 
-            echo '<a class="LinkButtonBlock" href ="'.CreateHREF($children[$i]->GetPath()).'" ">';
-            echo $children[$i]->GetTitle();
-            echo '</a>';
+        echo "</div>";
+        //---
 
-            echo "</div>";
-            //---
+        //B-----
+        echo "<div class='ChildDetailButton' style='display:table-cell;  width:10%;' "
+        .'onmouseover="QuickLookMouse('
+        ."'ChildContent"
+        .$i
+        ."')"
+        .'" '
+        .'ontouchstart="QuickLookTouch('
+        ."'ChildContent"
+        .$i
+        ."')"
+        .'" '
+        .'onmouseout="ExitQuickLookMouse()" '
+        .'ontouchend="ExitQuickLookTouch()"'
+        ."></div>";
+        //---
 
-            //B-----
-            echo "<div class='ChildDetailButton' style='display:table-cell;  width:10%;' "
-            .'onmouseover="QuickLookMouse('
-            ."'ChildContent"
-            .$i
-            ."')"
-            .'" '
-            .'ontouchstart="QuickLookTouch('
-            ."'ChildContent"
-            .$i
-            ."')"
-            .'" '
-            .'onmouseout="ExitQuickLookMouse()" '
-            .'ontouchend="ExitQuickLookTouch()"'
-            ."></div>";
-            //---
+        //C-----
+        echo "<div class='ContentContainer' "
+        ."id='ChildContent".$i."Container"."'"
+        .">";
+        echo "<h1>" . $children[$i]->GetTitle(). "</h1>";
+        echo "<div>" . $children[$i]->GetAbstract(). "</div>";
+        echo "<div>" . $children[$i]->GetRootContent(). "</div>";
+        echo "</div>";
+        //---
 
-            //C-----
-            echo "<div class='ContentContainer' "
-            ."id='ChildContent".$i."Container"."'"
-            .">";
-            echo "<h1>" . $children[$i]->GetTitle(). "</h1>";
-            echo "<div>" . $children[$i]->GetAbstract(). "</div>";
-            echo "<div>" . $children[$i]->GetRootContent(). "</div>";
-            echo "</div>";
-            //---
+        echo "</div>";
 
-            echo "</div>";
-        }
     }
     echo '</div>';
 
@@ -260,7 +274,7 @@
             echo $parents[$index]->GetTitle();
             echo '</a>';
         }
-        echo ' > ';
+        echo ' &gt; ';
     }
     echo '</div>';
 
@@ -290,7 +304,7 @@
         else
         {
             echo '<a  href ="'.CreateHREF($rightContent->GetPath()).'">';
-            echo  mb_strimwidth($rightContent->GetTitle(), 0, $brotherTitleMaxStrWidth, "...", "UTF-8") . " >";
+            echo  mb_strimwidth($rightContent->GetTitle(), 0, $brotherTitleMaxStrWidth, "...", "UTF-8") . " &gt;";
             echo '</a>';
             echo "<div id = 'RightContentContainer' class='ContentContainer'>";
             echo "<h1>" . $rightContent->GetTitle(). "</h1>";
@@ -321,7 +335,7 @@
         else
         {
             echo '<a  href ="'.CreateHREF($leftContent->GetPath()).'">';
-            echo  "< ". mb_strimwidth($leftContent->GetTitle(), 0, $brotherTitleMaxStrWidth, "...", "UTF-8");
+            echo  "&lt; ". mb_strimwidth($leftContent->GetTitle(), 0, $brotherTitleMaxStrWidth, "...", "UTF-8");
             echo '</a>';
             echo "<div id = 'LeftContentContainer' class='ContentContainer'>";
             echo "<h1>" . $leftContent->GetTitle(). "</h1>";
@@ -375,16 +389,17 @@
             for($i = 0; $i < $childrenCount; $i++){
 
                 $child = $parents[$parentsIndex]->GetChild($i);
+                if($child === false){
+                    continue;
+                }
 
                 if($i == $currentContentIndex){
-
                     $navigator.=  "<li>";
                     $navigator.=  "<a class = 'Selected' href='" . CreateHREF($child->GetPath()) . "'>" . $child->GetTitle() . "</a>";
                     $navigator.=  "</li>";
 
                     $navigator.="<ul>";
                     foreach($children as $c){
-
                         $navigator.=  "<li>";
                         $navigator.=  "<a href='" . CreateHREF($c->GetPath()) . "'>" . $c->GetTitle() . "</a>";
                         $navigator.=  "</li>";
@@ -407,6 +422,9 @@
                 }
                 else{
                     $child = $parents[$parentsIndex]->GetChild($i);
+                    if($child === false){
+                        continue;
+                    }
                     $navigator.=  "<li>";
                     $navigator.=  "<a href='" . CreateHREF($child->GetPath()) . "'>" . $child->GetTitle() . "</a>";
                     $navigator.=  "</li>";

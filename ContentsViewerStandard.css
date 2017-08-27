@@ -1,7 +1,7 @@
 ﻿/*
 *ContentsViewerStandard
 *   最終更新日:
-*       2.18.2016
+*       2017/8/26
 *
 *   説明:
 *       ContentsViewerStandardが用いるStyleSheetです
@@ -40,18 +40,24 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 body {
-    font-size: 13pt;
-    color: #222222;
+    font-size: 12pt;
+    color: #4a4a4a;
+    /*font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica Neue,Hiragino Kaku Gothic ProN,"メイリオ",meiryo,sans-serif*/
     font-family: "arial";
 }
 
-.SubSection {
+p {
+    line-height: 2.0em;
+    letter-spacing: 0.8pt;
+}
+
+.Section {
     position: relative;
     padding: .25em 0 .5em .75em;
     border-left: 6px solid #ccc;
 }
 
-    .SubSection::before {
+    .Section::before {
         position: absolute;
         left: -6px;
         bottom: 0;
@@ -61,7 +67,7 @@ body {
         background-color: #3498db;
     }
 
-    .SubSection::after {
+    .Section::after {
         position: absolute;
         left: 0;
         bottom: 0;
@@ -71,7 +77,7 @@ body {
         border-bottom: 1px solid #ccc;
     }
 
-.SubSubSection {
+.SubSection {
     padding: .25em 0 .25em .75em;
     border-left: 6px solid #ccc;
 }
@@ -91,6 +97,11 @@ body {
     width: 100%;
     overflow: hidden;
 }
+
+    #HeaderArea a {
+        text-decoration: none;
+        color: white;
+    }
 
 @keyframes HeaderAreaDisappear {
     from {
@@ -123,6 +134,50 @@ body {
     overflow-x: hidden;
 }
 
+@keyframes LeftSideAreaRiseUp{
+    from{
+        top: 120px;
+    }
+    to{
+        top: 70px;
+    }
+}
+@keyframes LeftSideAreaRiseDown {
+    from {
+        top: 70px;
+    }
+
+    to {
+        top: 120px;
+    }
+}
+#IndexAreaOnSmallScreen {
+    display: none;
+    border: 4px double #ddd;
+    margin: 2em 0em;
+}
+
+#IndexArea {
+    position: fixed;
+    margin: 0px;
+    top: 50px;
+    right: 0px;
+    width: 20%;
+    bottom: 50px;
+    background-color: white;
+}
+
+    #IndexArea div.Navi {
+        top: 2em;
+        right: 0px;
+        left: 0px;
+        bottom: 0px;
+        font-size: 0.7em;
+        margin: 0px;
+        overflow-x: hidden;
+        position: absolute;
+    }
+
 #MainPageBottomAppearingOnSmallScreen {
     display: none;
     margin: 0px;
@@ -132,8 +187,10 @@ body {
 
 #MainArea {
     margin-left: 25%;
+    margin-right: 20%;
     margin-top: 110px;
     margin-bottom: 50px;
+    padding: 1%;
     background-color: #F8F8FF;
 }
 
@@ -400,9 +457,10 @@ body {
     text-align: right;
     margin: 1.12em 0;
 }
-.FileDateField img{
-    height: 100%;
-}
+
+    .FileDateField img {
+        height: 100%;
+    }
 
 .Abstract {
     background-color: #F0F0F8;
@@ -413,13 +471,26 @@ body {
     margin-left: 10px;
 }
 
+figure {
+    text-align: right;
+}
+
+    figure img {
+        max-width: 600px;
+        width: 80%;
+    }
+
+figcaption {
+    font-weight: bold;
+}
+
 p.ResizeImage {
-    text-align: center;
+    text-align: right;
 }
 
     p.ResizeImage img {
         max-width: 600px;
-        width: 100%;
+        width: 80%;
     }
 
 .Area {
@@ -449,50 +520,52 @@ p.ResizeImage {
 
 ol.SectionList {
     list-style: none;
-    margin: 0;
-    padding: 0 0 0 1em;
+    margin: 0 0 0 0.5em;
+    padding: 0 0 0 0.5em;
+    border-left: 3px double #eee;
 }
 
 ul.SectionList {
     list-style: none;
-    margin: 0;
-    padding: 0 0 0 1em;
+    margin: 0 0 0 0.5em;
+    padding: 0 0 0 0.5em;
+    border-left: 3px double #eee;
 }
 
-ul.Navi {
+div.Navi {
     font-size: 0.875em;
     list-style: none;
     margin-top: 5px;
-    margin-left: 10px;
+    /*margin-left: 10px;*/
     padding: 0px;
 }
 
-    ul.Navi ul {
+    div.Navi ul {
         margin: 0 0 0 0.8em;
         padding: 0px;
         list-style: none;
     }
 
-    ul.Navi li {
+    div.Navi li {
         margin: 0px;
         padding: 0px;
         list-style: none;
     }
 
-    ul.Navi a {
+    div.Navi a {
         color: #BBBBBB;
         text-decoration: none;
         display: block;
         border: solid white 2px;
-        padding: 0.1em 0 0.1em 0.5em;
+        padding: 0.1em 0em 0.1em 0.5em;
     }
 
-        ul.Navi a.Selected {
+        div.Navi a.Selected {
             color: #444444;
             background-color: #EEEEEE;
         }
 
-        ul.Navi a:hover {
+        div.Navi a:hover {
             color: #444444;
             text-decoration: underline;
             background-color: #EEEEEE;
@@ -546,7 +619,7 @@ table.list {
 
     body {
         -webkit-text-size-adjust: 100%;
-        font-size: 12pt;
+        font-size: 11pt;
     }
 
     ul {
@@ -568,7 +641,7 @@ table.list {
 
     body {
         -webkit-text-size-adjust: 100%;
-        font-size: 11pt;
+        font-size: 10pt;
     }
 
     ul {
@@ -584,9 +657,14 @@ table.list {
 
 
 @media screen and (max-width: 500px) {
+    body {
+        -webkit-text-size-adjust: 100%;
+        font-size: 11pt;
+    }
 
     #MainArea {
         margin-left: auto;
+        margin-right: auto;
     }
 
     #LeftSideArea {
@@ -594,6 +672,14 @@ table.list {
     }
 
     #MainPageBottomAppearingOnSmallScreen {
+        display: block;
+    }
+
+    #IndexArea {
+        display: none;
+    }
+
+    #IndexAreaOnSmallScreen {
         display: block;
     }
 }
