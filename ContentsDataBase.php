@@ -41,479 +41,104 @@
  *          新年になってログファイルが更新されない問題を修正
  *          セキュリティー強化
  */
-if(isset($_POST["Command"]))
-{
-    ContentTransport::PerformCommand($_POST["Command"]);
-}
-
-//
-//Type; Arguments...
-//Type:
-//  Content:
-//  Error:
-//
-class ContentTransport
-{
-    //
-    //関数:
-    //  説明:
-    //      Commandを解析し実行します.
-    //
-    //  返り値:
-    //      true:
-    //          成功
-    //
-    //      false:
-    //          失敗
-    //
-    public static function  PerformCommand($command)
-    {
-        $work = json_decode($command, true);
-        $header = $work["header"];
 
 
-        switch($header)
-        {
-            case "GetContentFromFile":
-                $filePath = $work["filePath"];
-                $content = new Content();
-                if($content->SetContent($filePath) === false)
-                {
-                    Debug::LogError("[PerformCommand] Fail > Command'GetContentFromFile'");
-                    static::SendError("[PerformCommand] Fail. \nこのError情報は自動で管理者に送信されます.");
-                    return false;
-                }
-
-                static::SendContent($content, 0);
-                break;
-
-            case "GetChild":
-                $index = $work["index"];
-                $contentData = $work["content"];
-
-                $content = new Content();
-                $content->DecodeFromContentData($contentData);
-                $child = $content->GetChild($index);
-                if($child === false)
-                {
-                    Debug::LogError("[PerformCommand] Fail > Command'GetChild'");
-                    static::SendError("[PerformCommand] Fail. \nこのError情報は自動で管理者に送信されます.");
-                    return false;
-                }
-
-                static::SendContent($child, $index);
-                break;
-
-            case "GetParent":
-                $contentData = $work["content"];
-                $content = new Content();
-                $content->DecodeFromContentData($contentData);
-                $parent = $content->GetParent();
-                if($parent === false)
-                {
-                    Debug::LogError("[PerformCommand] Fail > Command'GetParent'");
-                    static::SendError("[PerformCommand] Fail. \nこのError情報は自動で管理者に送信されます.");
-                    return false;
-                }
-
-                static::SendContent($parent, 0);
-                break;
-        }
-
-        return true;
-    }
-
-    //
-    //関数
-    //  説明:
-    //      Client側にContentDataを送ります
-    //
-    public static function SendContent(Content $content, $index)
-    {
-        $data = $content->EncodeToContentData();
-        $data += array("type" => "Content");
-        $data += array("index" => $index);
-        echo json_encode($data);
-    }
-
-    //
-    //関数
-    //  説明:
-    //      Client側にErrorMessageを送ります
-    //
-    public static function SendError($message)
-    {
-        $data = array("type" => "Error", "message" => $message);
-        echo json_encode($data);
-    }
+ include "Debug.php";
 
 
-}
-
-class Debug
-{
-    private static $logFileName = "OutputLog.txt";
-
-    public static function Log($message)
-    {
-        //文字列に変換
-        $messageStr = static::ToString($message);
-        return static::OutputLog($messageStr);
-    }
-
-    public static function LogWarning($message)
-    {
-        //文字列に変換
-        $messageStr = "WARNING: " . static::ToString($message);
-        return static::OutputLog($messageStr);
-    }
-
-    public static function LogError($message)
-    {
-        //文字列に変換
-        $messageStr = "ERROR: " . static::ToString($message);
-        return static::OutputLog($messageStr);
-    }
-
-    private static function OutputLog($messageStr)
-    {
-        $renew = false;
-
-        //Fileが存在するとき
-        //Fileを新しく更新するかどうか判別
-        if(file_exists(static::$logFileName))
-        {
-            $fdate = filemtime(static::$logFileName);
-            if($fdate === false)
-            {
-                return false;
-            }
-            $fmonth = intval(date("n", $fdate));
-
-            $date = getdate();
-            $month = $date["mon"];
-            if($month != $fmonth)
-            {
-                $renew = true;
-            }
-            else
-            {
-                $renew = false;
-            }
-        }
-
-        //Fileを開く
-        $file = null;
-        if($renew)
-        {
-            $file = @fopen(static::$logFileName, "w");
-
-            if($file === false)
-            {
-                return false;
-            }
-        }
-        else
-        {
-            $file = @fopen(static::$logFileName, "a");
-            if($file === false)
-            {
-                return false;
-            }
-        }
-
-        //書き込み
-        flock($file, LOCK_EX);
-        fputs($file, "\r\n" . date("H:i:s; m.d.Y") . "\r\n" . $messageStr . "\r\n");
-        flock($file, LOCK_UN);
-
-        fclose($file);
-
-        return true;
-    }
-
-    public static function ToString($object)
-    {
-        //nullのとき
-        if(is_null($object))
-        {
-            return "null";
-        }
-
-        //stringのとき
-        if(is_string($object))
-        {
-            return $object;
-        }
-
-        //数値のとき
-        if(is_numeric($object))
-        {
-            return strval($object);
-        }
-
-        //boolのとき
-        if(is_bool($object))
-        {
-            if($object === true)
-            {
-                return "true";
-            }
-
-            if($object === false)
-            {
-                return "false";
-            }
-        }
-
-        //objectのとき
-        if(is_object($object))
-        {
-            if(in_array("__toString", get_class_methods($object)))
-            {
-                return strval($object->__toString());
-            }
-            else
-            {
-                return get_class($object) . ": " . spl_object_hash($object);
-            }
-        }
-
-        //配列のとき
-        if(is_array($object))
-        {
-            return "Array";
-        }
-
-        //その他
-        return strval($object);
-    }
-}
 
 class Content
 {
-    //StartTag一覧
-    private static $startTagNameList =
+
+    private static $tagMap =
     [
-        "Parent" => "<CDB_Parent>",
-        "Children" => "<CDB_Children>",
-        "Child" => "<CDB_Child>",
-        "Title" => "<CDB_Title>",
-        "Abstract" => "<CDB_Abstract>",
-        "CreatedAt"=>"<CDB_CreatedAt>"
+        "Header" => ["StartTag" => "<Header>", "EndTag" => "</Header>"],
+        "Parent" => ["StartTag" => "<Parent>", "EndTag" => "</Parent>"],
+        "Child" => ["StartTag" => "<Child>", "EndTag" => "</Child>"],
+        "Title" => ["StartTag" => "<Title>", "EndTag" => "</Title>"],
+        "CreatedAt" => ["StartTag" => "<CreatedAt>", "EndTag" => "</CreatedAt>"],
+        "Summary" => ["StartTag" => "<Summary>", "EndTag" => "</Summary>"]
     ];
 
-    //EndTag一覧
-    private static $endTagNameList =
-    [
-        "Parent" => "</CDB_Parent>",
-        "Children" => "</CDB_Children>",
-        "Child" => "</CDB_Child>",
-        "Title" => "</CDB_Title>",
-        "Abstract" => "</CDB_Abstract>",
-        "CreatedAt"=>"</CDB_CreatedAt>"
-    ];
 
     private static $dateFormat = "Y/m/d";
 
+    private static $contentFileExtension = ".content";
+
+    // コンテンツファイルへのパス.
     private $path = "";
     private $title = "";
-    private $abstract = "";
-    private $rootContent = "";
-
-    //parentへのfilePath
-    private $parent = "";
-
-    //各childへのfilePathList
-    private $children = array();
-
-    private $isFinal = false;
-    private $isRoot = false;
+    private $summary = "";
+    private $body = "";
     private $updatedAt = "";
     private $createdAt = "";
 
-    public function EncodeToContentData()
-    {
-        $data = array(
-            "path"=> $this->path,
-            "title" => $this->title,
-            "abstract" => $this->abstract,
-            "rootContent" => $this->rootContent,
-            "parent" => $this->parent,
-            "children" => $this->children,
-            "isFinal" => $this->isFinal,
-            "isRoot" => $this->isRoot,
-            "updatedAt" => $this->updatedAt,
-            "createdAt"=> $this->createdAt
-            );
+    //parentへのfilePath
+    private $parentPath = "";
 
-        return $data;
-    }
-
-    public function DecodeFromContentData($contentData)
-    {
-        $allTrue = true;
-
-        $temp = $contentData["path"];
-        if(is_null($temp))
-        {
-            Debug::LogWarning("[DecodeFromContentData] Fail > Key'path'");
-            $allTrue = false;
-        }
-        else
-        {
-            $this->path = $temp;
-        }
-
-        $temp = $contentData["title"];
-        if(is_null($temp))
-        {
-            Debug::LogWarning("[DecodeFromContentData] Fail > Key'title'");
-            $allTrue = false;
-        }
-        else
-        {
-            $this->title = $temp;
-        }
-
-        $temp = $contentData["abstract"];
-        if(is_null($temp))
-        {
-            Debug::LogWarning("[DecodeFromContentData] Fail > Key'abstract'");
-            $allTrue = false;
-        }
-        else
-        {
-            $this->abstract = $temp;
-        }
-
-        $temp = $contentData["rootContent"];
-        if(is_null($temp))
-        {
-            Debug::LogWarning("[DecodeFromContentData] Fail > Key'rootContent'");
-            $allTrue = false;
-        }
-        else
-        {
-            $this->rootContent = $temp;
-        }
-
-        $temp = $contentData["parent"];
-        if(is_null($temp))
-        {
-            Debug::LogWarning("[DecodeFromContentData] Fail > Key'parent'");
-            $allTrue = false;
-        }
-        else
-        {
-            $this->parent = $temp;
-        }
-
-        $temp = $contentData["children"];
-        if(is_null($temp))
-        {
-            Debug::LogWarning("[DecodeFromContentData] Fail > Key'children'");
-            $allTrue = false;
-        }
-        else
-        {
-            $this->children = $temp;
-        }
+    //各childへのfilePathList
+    private $childPathList = array();
 
 
-        $temp = $contentData["isFinal"];
-        if(is_null($temp))
-        {
-            Debug::LogWarning("[DecodeFromContentData] Fail > Key'isFinal'");
-            $allTrue = false;
-        }
-        else
-        {
-            $this->isFinal = $temp;
-        }
-
-        $temp = $contentData["isRoot"];
-        if(is_null($temp))
-        {
-            Debug::LogWarning("[DecodeFromContentData] Fail > Key'isRoot'");
-            $allTrue = false;
-        }
-        else
-        {
-            $this->isRoot = $temp;
-        }
-
-        $temp = $contentData["updatedAt"];
-        if(is_null($temp))
-        {
-            Debug::LogWarning("[DecodeFromContentData] Fail > Key'updatedAt'");
-            $allTrue = false;
-        }
-        else
-        {
-            $this->updatedAt = $temp;
-        }
-
-
-        $temp = $contentData["createdAt"];
-        if(is_null($temp))
-        {
-            Debug::LogWarning("[DecodeFromContentData] Fail > Key'createdAt'");
-            $allTrue = false;
-        }
-        else
-        {
-            $this->createdAt = $temp;
-        }
-        return $allTrue;
-    }
 
     //このContentがあったファイルのパスを取得
-    public function GetPath()
+    public function Path()
     {
         return $this->path;
     }
 
     //Title(題名)取得
-    public function GetTitle()
+    public function Title()
     {
         return $this->title;
     }
 
-    //Abstract(概要)取得
-    public function GetAbstract()
+    //概要取得
+    public function Summary()
     {
-        return $this->abstract;
+        return $this->summary;
+    }
+
+    public function SetSummary($summary){
+        return $this->summary = $summary;
     }
 
     //このContentが持つ子Contents取得
-    public function GetChildren()
+    public function ChildPathList()
     {
-        return $this->children;
+        return $this->childPathList;
+    }
+
+    public function ParentPath(){
+        return $this->parentPath;
     }
 
     //このContentが持つ子Contentsの数
-    public function GetChildrenCount()
+    public function ChildCount()
     {
-        return count($this->children);
+        return count($this->childPathList);
     }
 
     //このContentのRootContent取得
-    public function GetRootContent()
+    public function Body()
     {
-        return $this->rootContent;
+        return $this->body;
+    }
+    public function SetBody($body){
+        return $this->body = $body;
     }
 
-    //このContentが持つisFinal取得
+
+    //このContentが末端コンテンツかどうか
     public function IsFinal()
     {
-        return $this->isFinal;
+        return count($this->childPathList) == 0;
     }
 
-    //このContentが持つisRoot取得
+    //このContentが最上位コンテンツかどうか
     public function IsRoot()
     {
-        return $this->isRoot;
+        return $this->parentPath == "";
     }
 
     //このContentが持つupdatedAt取得
@@ -527,19 +152,19 @@ class Content
     }
 
     //このContentが何番目の子供か調べます
-    public function GetIndex()
+    public function ChildIndex()
     {
-        $parent = $this->GetParent();
+        $parent = $this->Parent();
         if($parent === false)
         {
             return -1;
         }
         $myIndex = -1;
-        $brothers = $parent->GetChildren();
+        $brothers = $parent->ChildPathList();
         $count = count($brothers);
         for($i = 0; $i < $count; $i++)
         {
-            if($this->RelativePath(realpath(dirname($parent->path). "/" . $brothers[$i])) === $this->path)
+            if($this->RelativePath(realpath(dirname($parent->path . static::$contentFileExtension). "/" . $brothers[$i] . static::$contentFileExtension)) === $this->path . static::$contentFileExtension)
             {
                 $myIndex =$i;
                 break;
@@ -560,11 +185,11 @@ class Content
     //      false:
     //          失敗
     //
-    public function GetChild($index)
+    public function Child($index)
     {
-        $childPath = $this->RelativePath(realpath(dirname($this->path) . "/" . $this->children[$index]));
+        $childPath = $this->RelativePath(realpath(dirname($this->path . static::$contentFileExtension) . "/" . $this->childPathList[$index] . static::$contentFileExtension));
         $child = new Content();
-        if($child->SetContent($childPath) === false)
+        if($child->SetContent(substr($childPath, 0, strrpos($childPath, '.'))) === false)
         {
             return false;
         }
@@ -584,11 +209,11 @@ class Content
     //      false:
     //          失敗
     //
-    public function GetParent()
+    public function Parent()
     {
-        $parentPath = $this->RelativePath(realpath(dirname($this->path) . "/" . $this->parent));
+        $parentPath = $this->RelativePath(realpath(dirname($this->path . static::$contentFileExtension) . "/" . $this->parentPath . static::$contentFileExtension));
         $parent = new Content();
-        if($parent->SetContent($parentPath) === false)
+        if($parent->SetContent(substr($parentPath, 0, strrpos($parentPath, '.'))) === false)
         {
             return false;
         }
@@ -597,186 +222,159 @@ class Content
     }
 
 
+
     //
-    //関数:
-    //  説明:
-    //      fileを読み込みContent情報を設定します.
-    //
-    //  返り値:
-    //      true:
-    //          成功
-    //
-    //      false:
-    //          失敗, Errorあり
-    //
+    // fileを読み込みContentの情報を設定します.
+    // @return:
+    //  true: 成功
+    //  false: 失敗
     function SetContent($filePath)
     {
         //拡張子確認
-        $ext = substr($filePath, strrpos($filePath, '.') + 1);
-        if($ext != "txt" && $ext != "html")
-        {
-            return false;
-        }
+        //$ext = substr($filePath, strrpos($filePath, '.') + 1);
+        //if($ext != static::$contentFileExtension)
+        //{
+        //    return false;
+        //}
+        
+        $filePath .= static::$contentFileExtension;
+        
 
         //パス正規化
         $filePath = $this->RelativePath(realpath($filePath));
         
-        $data = $this->ReadFile($filePath);
-        if($data === false)
+        // echo $filePath;
+        $text = $this->ReadFile($filePath);
+        if($text === false)
         {
             return false;
         }
-        $this->path = $filePath;
+
+        // 拡張子を除くPathを保存
+        $this->path = substr($filePath, 0, strrpos($filePath, '.'));
+        //$this->path = $filePath;
         $this->updatedAt = date(static::$dateFormat, filemtime($filePath));
 
-        $dataList = $this->ToDataList($data);
+        //$dataList = $this->ToDataList($data);
 
         //Content情報を初期化
-        $this->rootContent = "";
-        $this->children = array();
-        $this->parent = "";
+        $this->body = "";
+        $this->childPathList = array();
+        $this->parentPath = "";
 
-        $hasParent = false;
-        $hasChildren = false;
-        $inChildren = false;
-        $elements = array();
-        $countDataList = count($dataList);
-        for($i = 0; $i < $countDataList; $i++)
-        {
-            $str = $dataList[$i];
-            /*
-            //Debug
-            Debug::Log($str);
-             */
-            switch($str)
-            {
-                case static::$startTagNameList["Children"]:
-                    if($hasChildren)
-                    {
-                        Debug::LogError("[SetContent] Fail > file'{$filePath}'内に複数のCildren要素があります.");
-                        return false;
-                    }
 
-                    $hasChildren = true;
-                    $inChildren = true;
-                    array_push($elements, array($str, ""));
-                    break;
 
-                case static::$startTagNameList["Child"]:
-                    if(!$inChildren)
-                    {
-                        Debug::LogError("[SetContent] Fail > file'{$filePath}'内においてChildren要素外にChild要素があります.");
-                        return false;
-                    }
-                    array_push($elements, array($str, ""));
+        $lines = explode("\n", $text);
+        $lineCount = count($lines);
 
-                    break;
+        $isInHeader = false;
+        $isInSummary = false;
 
-                case static::$startTagNameList["Parent"]:
-                    $hasParent=true;
-                    array_push($elements, array($str, ""));
-                    break;
-
-                case static::$startTagNameList["Title"]:
-                case static::$startTagNameList["Abstract"]:
-                case static::$startTagNameList["CreatedAt"]:
-                    array_push($elements, array($str, ""));
-                    break;
-
-                case static::$endTagNameList["Children"]:
-                    $element = array_pop($elements);
-                    if($this->TagChecker($element[0], "Children") === false)
-                    {
-                        return false;
-                    }
-                    $inChildren = false;
-                    break;
-
-                case static::$endTagNameList["Child"]:
-                    $element = array_pop($elements);
-                    if($this->TagChecker($element[0], "Child") === false)
-                    {
-                        return false;
-                    }
-                    array_push($this->children, $element[1]);
-
-                    break;
-
-                case static::$endTagNameList["Title"]:
-                    $element = array_pop($elements);
-                    if($this->TagChecker($element[0], "Title") === false)
-                    {
-                        return false;
-                    }
-                    $this->title = $element[1];
-                    break;
-
-                case static::$endTagNameList["Abstract"]:
-                    $element = array_pop($elements);
-                    if($this->TagChecker($element[0], "Abstract") === false)
-                    {
-                        return false;
-                    }
-                    $this->abstract = $element[1];
-
-                    break;
-
-                case static::$endTagNameList["CreatedAt"]:
-                    $element = array_pop($elements);
-                    if($this->TagChecker($element[0], "CreatedAt") === false)
-                    {
-                        return false;
-                    }
-
-                    $this->createdAt = date(static::$dateFormat,strtotime($element[1]));
-
-                    break;
-
-                case static::$endTagNameList["Parent"]:
-                    $element = array_pop($elements);
-                    if($this->TagChecker($element[0], "Parent") === false)
-                    {
-                        return false;
-                    }
-                    $this->parent = $element[1];
-                    break;
-
-                default:
-                    $countElements = count($elements);
-                    if($countElements > 0)
-                    {
-                        $elements[$countElements - 1][1] .= $str;
-                    }
-                    else
-                    {
-                        $this->rootContent .= $str;
-                    }
-
-                    break;
+        // 各行ごとの処理
+        for($i = 0; $i < $lineCount; $i++){
+            
+            if($isInHeader){
+                // Header内にある場合はHeaderの終了タグを検索する.
+                if(strpos($lines[$i], static::$tagMap['Header']['EndTag']) !== false){
+                    $isInHeader = false;
+                    continue;
+                }
             }
 
+            else{
+                // Header内にないときはHeaderの開始タグを検索する.
+                if(strpos($lines[$i], static::$tagMap['Header']['StartTag']) !== false){
+                    $isInHeader = true;
+                    continue;
+                    
+                }
+            }
+
+            // Header内
+            if($isInHeader){
+            
+                if($isInSummary){
+                    if(strpos($lines[$i], static::$tagMap['Summary']['EndTag']) !== false){
+                        $isInSummary = false;
+                        continue;
+                    }
+                }
+
+
+                else{
+                
+
+                    $position = 0;
+
+                    if(($position = strpos($lines[$i], static::$tagMap['Parent']['StartTag'])) !== false){
+                        $position += strlen(static::$tagMap['Parent']['StartTag']);
+
+                        $this->parentPath = substr($lines[$i], $position);
+                        $this->parentPath = str_replace(" ", "", $this->parentPath);
+
+                        continue;
+                    
+                    } elseif(($position = strpos($lines[$i], static::$tagMap['Child']['StartTag'])) !== false){
+                        $position += strlen(static::$tagMap['Child']['StartTag']);
+                        
+                        $childPath = substr($lines[$i], $position);
+                        $childPath = str_replace(" ", "", $childPath);
+
+                        $this->childPathList[] = $childPath;
+                        
+                        continue;
+
+                    } elseif(($position = strpos($lines[$i], static::$tagMap['CreatedAt']['StartTag'])) !== false){
+                        $position += strlen(static::$tagMap['CreatedAt']['StartTag']);
+                        
+                        $this->createdAt = substr($lines[$i], $position);
+                        $this->createdAt = str_replace(" ", "", $this->createdAt);
+
+                        continue;
+
+                     } elseif(($position = strpos($lines[$i], static::$tagMap['Title']['StartTag'])) !== false){
+                        $position += strlen(static::$tagMap['Title']['StartTag']);
+                        
+                        $this->title = substr($lines[$i], $position);
+
+                        continue;
+
+                    } elseif(($position = strpos($lines[$i], static::$tagMap['Summary']['StartTag'])) !== false){
+                        $isInSummary = true;
+                        continue;
+
+                    }
+                }
+
+
+                if($isInSummary){
+                    $this->summary .= $lines[$i] . "\n";
+                }
+            } // End Header内
+
+            else{
+                $this->body .= $lines[$i] . "\n";
+            }
         }
 
-        $this->isFinal = !$hasChildren;
-        $this->isRoot = !$hasParent;
+
+
         return true;
     }
 
 
     //
-    //関数:
-    //  説明:
-    //      File読み込みます
+    // ファイルを読み込みます
     //
-    //  返り値:
-    //      data:
-    //          読み込んだdata
+    // @param filePath:
+    //  読み込み先
     //
-    //      false:
-    //          失敗
+    // @return:
+    //  読み込んだ文字列を返します. 失敗した場合はfalseを返します.
     //
-    function ReadFile($filePath)
+    static function ReadFile($filePath)
     {
+       
         if(is_dir($filePath))
         {
             Debug::LogError("[ReadFile] Fail > Directory'{$filePath}'が読み込まれました.");
@@ -784,104 +382,19 @@ class Content
         }
 
         //file読み込み
-        $data = @file_get_contents($filePath);
+        $text = @file_get_contents($filePath);
 
-        if($data === false)
+        // Unix処理系の改行コード(LF)にする.
+        $text = str_replace("\r", "", $text);
+
+        if($text === false)
         {
             Debug::LogError("[ReadFile] Fail > file'{$filePath}'の読み込みに失敗しました.");
             return false;
         }
-        Debug::Log("[ReadFile] file'{$filePath}'を読み込みました.");
+        //Debug::Log("[ReadFile] file'{$filePath}'を読み込みました.");
 
-        return $data;
-    }
-
-    //DataをDataList-Tag分析されたList-に変換します
-    function ToDataList($data)
-    {
-        //Tag分析
-        $elements = array();
-        $offset = 0;
-        while(true)
-        {
-            $foundPos = false;
-            $foundStr = "";
-            foreach(static::$startTagNameList as $key=>$value)
-            {
-                //文字列検索
-                $pos = strpos($data, $value, $offset);
-                if($pos === false)
-                {
-                    continue;
-                }
-
-                //過去に見つかっている場所と比較して現在見つかった場所がそれよりも前にあるとき
-                if($foundPos === false | $foundPos > $pos)
-                {
-                    $foundPos = $pos;
-                    $foundStr = $value;
-                }
-            }
-
-            foreach(static::$endTagNameList as $key=>$value)
-            {
-                //文字列検索
-
-                $pos = strpos($data, $value, $offset);
-                if($pos === false)
-                {
-                    continue;
-                }
-
-                //過去に見つかっている場所と比較して現在見つかった場所がそれよりも前にあるとき
-                if($foundPos === false | $foundPos > $pos)
-                {
-                    $foundPos = $pos;
-                    $foundStr = $value;
-                }
-            }
-
-            //検索文字列がこれ以上見つからないとき
-            if($foundPos === false)
-            {
-                //offsetからdataの最後まで読み込む
-                array_push($elements, substr($data, $offset));
-                break;
-            }
-            else
-            {
-                //offsetから見つけた位置まで読み込む
-                array_push($elements, substr($data, $offset, $foundPos - $offset));
-                $offset = $foundPos;
-
-                //offsetから見つけた文字列の最後尾まで読み込む
-                array_push($elements, substr($data, $offset, strlen($foundStr)));
-                $offset += strlen($foundStr);
-            }
-        }
-
-        foreach($elements as &$element){
-            //要素前後にあるごみ―Space, 改行, タブなど―を排除
-            $element = preg_replace('/^[\s]+/', '', $element);
-            $element = preg_replace('/[\s]+$/', '', $element);
-        }
-
-        return $elements;
-    }
-
-    function TagChecker($startTag, $tagName)
-    {
-        if($startTag != static::$startTagNameList[$tagName])
-        {
-            Debug::LogError (
-                "[TagChecker] Fail > StartTagとEndTagが一致しません. StartTag: " .
-                $startTag .
-                "; EndTag: " .
-                static::$endTagNameList[$tagName] .
-                ";");
-
-            return false;
-        }
+        return $text;
     }
 
 

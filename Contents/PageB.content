@@ -1,0 +1,20 @@
+<Header>
+    <Parent> Root
+    <CreatedAt> 2018/4/16
+    <Title> PageB
+
+    <Summary>
+        ここにはこのコンテンツに関する概要を書きます
+    </Summary>
+
+</Header>
+
+ここにはこのコンテンツ自身の内容を書きます
+
+[google](https://www.google.co.jp/)にアクセス!!!
+
+
+|[Table]
+| 名前 || は何ですか? |
+|------||------------|
+| わか || りません |

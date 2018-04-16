@@ -1,39 +1,264 @@
-﻿/*
-*ContentsViewerStandard
-*   最終更新日:
-*       2017/8/26
-*
-*   説明:
-*       ContentsViewerStandardが用いるStyleSheetです
-*
-*   更新履歴:
-*       8.24.2016:
-*           プログラムの完成
-*
-*       10.5.2016:
-*           GUI関係外部と分離
-*
-*       10.7.2016:
-*           iPhoneを横にしたときの文字サイズを調整
-*
-*       11.15.2016:
-*           レイアウト調整
-*           スタイル BottomRightArea, BottomLeftArea追加
-*
-*       12.2.2016:
-*           bottomAreaの透明度変更
-*
-*       2.18.2017:
-*           デザイン大きく変更
-*/
-h1, h2, h3, h4, h5, h6 {
-    font-size: 100%;
-}
+﻿
+
+
+
+
+
+
+
+
+
+
+
 
 h1, h2, h3, h4, h5, h6 {
     font-size: larger;
     margin-bottom: 0px;
 }
+
+
+.SectionTitle {
+    position: relative;
+    padding: .25em 0 .5em .75em;
+    border-left: 6px solid #ccc;
+}
+
+    .SectionTitle::before {
+        position: absolute;
+        left: -6px;
+        bottom: 0;
+        content: '';
+        width: 6px;
+        height: 50%;
+        background-color: #3498db;
+    }
+
+    .SectionTitle::after {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        content: '';
+        width: 100%;
+        height: 0;
+        border-bottom: 1px solid #ccc;
+    }
+
+.SubSectionTitle {
+    padding: .25em 0 .25em .75em;
+    border-left: 6px solid #ccc;
+}
+
+.Section {
+    list-style: none;
+    margin: 0 0 0 0em;
+    padding: 0 0 0 0.5em;
+    border-left: 3px double #eee;
+}
+
+
+figure {
+    text-align: right;
+}
+
+    figure img {
+        max-width: 600px;
+        width: 80%;
+    }
+
+figcaption {
+    font-weight: bold;
+}
+
+p {
+    line-height: 2.0em;
+    letter-spacing: 0.8pt;
+}
+
+
+table {
+    width: 100%;
+    margin: 0px 0 30px 0;
+    font-size: 0.875em;
+
+    border-collapse: collapse;
+    border-spacing: 0px;
+
+}
+
+    /* table tbody {
+        border-top: #e6e6e6 0px solid;
+    } */
+
+    table tr {
+        /* -webkit-transition: background .15s;
+        -moz-transition: background .15s;
+        -ms-transition: background .15s;
+        -o-transition: background .15s;
+        transition: background .15s; */
+        
+    }
+
+        table tbody tr:nth-child(odd) {
+            background: #fff;
+        }
+        table tbody tr:nth-child(even) {
+            
+            background: #f5f5f5;
+        }
+        table tbody tr:hover {
+            outline: #00cccc 1px solid;
+        }
+
+    table th{
+            
+        
+        background-color: #eee;
+        border: 1px solid #b9b9b9;
+    }
+
+    table td {
+        vertical-align: top;
+        padding: 7px 10px;
+
+        
+        border: 1px solid #b9b9b9;
+    }
+
+        table tbody th {
+            width: 18%;
+        }
+
+        table tbody td {
+            /* width: 82%; */
+        }
+
+        table thead th {
+            font-weight: 700;
+        }
+        
+/* 
+table.List {
+    width: 100%;
+    margin: 0px 0 30px 0;
+    font-size: 0.875em;
+}
+
+    table.List tbody {
+        border-top: #e6e6e6 0px solid;
+    }
+
+    table.List tr {
+        -webkit-transition: background .15s;
+        -moz-transition: background .15s;
+        -ms-transition: background .15s;
+        -o-transition: background .15s;
+        transition: background .15s;
+    }
+
+        table.List tr:nth-child(odd) {
+            background: #f8f8f8;
+        }
+
+        table.List tr:hover {
+            outline: #00cccc 1px solid;
+        }
+
+    table.List td {
+        vertical-align: top;
+        padding: 7px 10px;
+    }
+
+        table.List td.Label {
+            width: 18%;
+        }
+
+        table.List td.Desc {
+            width: 82%;
+        }
+
+        table.List td.Name {
+            font-weight: 700;
+        }
+        
+table.Standard {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    table.Standard th {
+        width: 25%;
+        padding: 6px;
+        text-align: left;
+        vertical-align: top;
+        color: #333;
+        background-color: #eee;
+        border: 1px solid #b9b9b9;
+    }
+
+    table.Standard td {
+        padding: 6px;
+        background-color: #fff;
+        border: 1px solid #b9b9b9;
+    }
+
+     */
+.Box {
+    position: relative;
+    margin: 2em 0;
+    padding: 0.5em 1em;
+    border: solid 3px #95ccff;
+    border-radius: 8px;
+}
+
+    .Box .BoxTitle {
+        position: absolute;
+        display: inline-block;
+        top: -13px;
+        left: 10px;
+        padding: 0 9px;
+        line-height: 1;
+        font-size: 19px;
+        background: #F8F8FF;
+        color: #95ccff;
+        font-weight: bold;
+    }
+
+    .Box p {
+        margin: 0;
+        padding: 0;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+/* 
+h1, h2, h3, h4, h5, h6 {
+    font-size: 100%;
+} */
+
 
 .LessEmphasize {
     font-size: medium;
@@ -46,56 +271,22 @@ body {
     font-family: "arial";
 }
 
-p {
-    line-height: 2.0em;
-    letter-spacing: 0.8pt;
-}
 
-.Section {
-    position: relative;
-    padding: .25em 0 .5em .75em;
-    border-left: 6px solid #ccc;
-}
-
-    .Section::before {
-        position: absolute;
-        left: -6px;
-        bottom: 0;
-        content: '';
-        width: 6px;
-        height: 50%;
-        background-color: #3498db;
-    }
-
-    .Section::after {
-        position: absolute;
-        left: 0;
-        bottom: 0;
-        content: '';
-        width: 100%;
-        height: 0;
-        border-bottom: 1px solid #ccc;
-    }
-
-.SubSection {
-    padding: .25em 0 .25em .75em;
-    border-left: 6px solid #ccc;
-}
 
 #HeaderArea {
     position: fixed;
     z-index: 100;
     color: white;
-    font-size: 24pt;
+    font-size: 25pt;
     background-color: green;
     margin: 0px;
     border: 0px;
-    padding: 0px 0px 5px 5px;
+    padding: 0px 0px 0px 5px;
     top: 0px;
     right: 0px;
-    height: 1em;
     width: 100%;
     overflow: hidden;
+    height: 1em;
 }
 
     #HeaderArea a {
@@ -109,13 +300,13 @@ p {
     }
 
     to {
-        width: 0px;
+        width: 0%;
     }
 }
 
 @keyframes HeaderAreaAppear {
     from {
-        width: 0px;
+        width: 0%;
     }
 
     to {
@@ -134,14 +325,16 @@ p {
     overflow-x: hidden;
 }
 
-@keyframes LeftSideAreaRiseUp{
-    from{
+@keyframes LeftSideAreaRiseUp {
+    from {
         top: 120px;
     }
-    to{
+
+    to {
         top: 70px;
     }
 }
+
 @keyframes LeftSideAreaRiseDown {
     from {
         top: 70px;
@@ -151,6 +344,7 @@ p {
         top: 120px;
     }
 }
+
 #IndexAreaOnSmallScreen {
     display: none;
     border: 4px double #ddd;
@@ -462,26 +656,13 @@ p {
         height: 100%;
     }
 
-.Abstract {
+.Summary {
     background-color: #F0F0F8;
     padding: 10px;
 }
 
-.RootContent {
+.MainContent {
     margin-left: 10px;
-}
-
-figure {
-    text-align: right;
-}
-
-    figure img {
-        max-width: 600px;
-        width: 80%;
-    }
-
-figcaption {
-    font-weight: bold;
 }
 
 p.ResizeImage {
@@ -517,20 +698,6 @@ p.ResizeImage {
     .LinkButtonBlock:hover {
         background-color: #59b1eb;
     }
-
-ol.SectionList {
-    list-style: none;
-    margin: 0 0 0 0.5em;
-    padding: 0 0 0 0.5em;
-    border-left: 3px double #eee;
-}
-
-ul.SectionList {
-    list-style: none;
-    margin: 0 0 0 0.5em;
-    padding: 0 0 0 0.5em;
-    border-left: 3px double #eee;
-}
 
 div.Navi {
     font-size: 0.875em;
@@ -572,49 +739,53 @@ div.Navi {
         }
 
 
-table.list {
-    width: 100%;
-    margin: 0px 0 30px 0;
-    font-size: 0.875em;
+ul.Tree {
+    list-style: none;
 }
 
-    table.list tbody {
-        border-top: #e6e6e6 0px solid;
+    ul.Tree ul {
+        list-style: none;
     }
 
-    table.list tr {
-        -webkit-transition: background .15s;
-        -moz-transition: background .15s;
-        -ms-transition: background .15s;
-        -o-transition: background .15s;
-        transition: background .15s;
+        ul.Tree ul li:before {
+            content: "├";
+            margin: 0px 4px 0px 0px;
+        }
+
+        ul.Tree ul li:last-child:before {
+            content: "└";
+            margin: 0px 4px 0px 0px;
+        }
+
+/*
+.box {
+    position: relative;
+    margin: 2em 0;
+    padding: 0.5em 1em;
+    border: solid 3px #62c1ce;
+}
+
+    .box .box-title {
+        position: absolute;
+        display: inline-block;
+        top: -27px;
+        left: -3px;
+        padding: 0 9px;
+        height: 25px;
+        line-height: 25px;
+        vertical-align: middle;
+        font-size: 17px;
+        background: #62c1ce;
+        color: #ffffff;
+        font-weight: bold;
+        border-radius: 5px 5px 0 0;
     }
 
-        table.list tr:nth-child(odd) {
-            background: #f8f8f8;
-        }
-
-        table.list tr:hover {
-            outline: #00cccc 1px solid;
-        }
-
-    table.list td {
-        vertical-align: top;
-        padding: 7px 10px;
+    .box p {
+        margin: 0;
+        padding: 0;
     }
-
-        table.list td.lbl {
-            width: 18%;
-        }
-
-        table.list td.desc {
-            width: 82%;
-        }
-
-        table.list td.name {
-            font-weight: 700;
-        }
-
+*/
 @media screen and (max-width: 1000px) {
 
     body {

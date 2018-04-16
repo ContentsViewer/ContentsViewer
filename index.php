@@ -1,40 +1,113 @@
-<!-- 
-最終更新日:
-    2017/8/25
+<?php
+    include "ContentsDatabase.php";
+    include "OutlineText.php";
 
-説明:
-    ContentDataBaseが持つContent情報をWebPageにします.
-    ContentsViewerのスタンダードデザイン
+    OutlineText::Init();
 
-更新履歴:
-    8.24.2016:
-        プログラムの完成
+    $rootContentPath = 'Contents/Root';
+    $contentsDataBaseURL = 'ContentsDataBase.php';
+    $parentsMaxCount = 3;
+    $brotherTitleMaxStrWidth = 20;
 
-    10.5.2016:
-        スクリプト修正
 
-    10.7.2016:
-        WebPageViewer.js修正に伴う修正
+    $key =$rootContentPath;
+    if(isset($_GET['content']))
+    {
+        $key = $_GET['content'];
+    }
 
-    11.15.2016:
-        Ajaxを用いないで描画するようにした; SEO対策
-        同階層にある左右の兄弟に直接アクセスできるようにした
-        親コンテンツを三つまで直接アクセスできるようにした
+    elseif(isset($_GET['contentPath'])){
 
-    12.2.2016:
-        ContetnsDataBase更新に伴う修正
+        $path = $_GET['contentPath'];
 
-    2.18.2017:
-        QuickLookModeを追加
-        名前の変更
+        $path = str_replace(".html", "", $path);
 
-    3.18.2017:
-        titleの命名規則変更; SEO対策
+        $url = "http://webviewer.php.xdomain.jp/?content=" . $path;
+        //$url = "http://localhost/?content=" . $path;
 
-    2017/8/25:
-        一部リンク参照で属性名のパターン不一致問題を修正
-        目次機能を追加; コンテンツ内にあるセクションを自動で取得する
--->
+        //echo "<br/>旧式のURLであると解釈しました. 新しいアドレスへ自動でリダイレクトします.<br/>";
+        //echo "<a href='" . $url . "'>" . $url . "</a>";
+        //echo $url;
+        header("Location: {$url}");
+
+        exit();
+    }
+
+    $currentContent = new Content();
+    $parents = [];
+    $children = [];
+    $leftContent = null;
+    $rightContent = null;
+
+    
+    $isGetCurrentContent = false;
+
+    // CurrentContentの取得
+    if($currentContent->SetContent($key))
+    {
+        $isGetCurrentContent = true;
+
+        //echo $isOldURL ? "true" : "false";
+        
+        // CurrentContentのSummaryとBodyをDecode
+        $currentContent->SetSummary(OutlineText::Decode($currentContent->Summary()));
+        $currentContent->SetBody(OutlineText::Decode($currentContent->Body()));
+
+        //ChildContentsの取得
+        $childrenPathList = $currentContent->ChildPathList();
+        for($i = 0; $i < count($childrenPathList); $i++)
+        {
+            $child = $currentContent->Child($i);
+            if($child !== false){
+                array_push($children, $child);
+            }
+        }
+
+        //Parentsの取得
+        $parent = $currentContent->Parent();
+        for($i = 0; $i < $parentsMaxCount; $i++)
+        {
+            if($parent === false)
+            {
+            
+                break;
+            }
+            array_push($parents, $parent);
+            $parent = $parent->Parent();
+        }
+
+        //LeftContent, RightContentの取得
+        if(isset($parents[0]))
+        {
+            $parent = $parents[0];
+            $brothers = $parent->ChildPathList();
+            $myIndex = $currentContent->ChildIndex();
+            if($myIndex >= 0)
+            {
+                if($myIndex > 0)
+                {
+                    $leftContent = $parent->Child($myIndex - 1);
+                }
+                if($myIndex <  count($brothers) - 1)
+                {
+                    $rightContent = $parent->Child($myIndex + 1);
+                }
+            }
+        }
+
+    }
+
+    if(!$isGetCurrentContent){
+        
+        header("HTTP/1.1 404 Not Found");
+
+
+    }
+
+    ?>
+
+
+
 
 <!DOCTYPE html>
 <html lang="ja">
@@ -46,111 +119,79 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
 
     <link rel="stylesheet" href="ContentsViewerStandard.css" />
-    <link rel="stylesheet" href="GUILayout.css" />
-    <script src="GUILayout.js"></script>
     <script src="ContentsViewerStandard.js"></script>
+
+
+
+
     <?php
-    include "ContentsDataBase.php";
-
-    $rootContentPath = 'Contents/Root.html';
-    $contentsDataBaseURL = 'ContentsDataBase.php';
-    $parentsMaxCount = 3;
-    $brotherTitleMaxStrWidth = 20;
-
-    $key =$rootContentPath;
-    if(isset($_GET['contentPath']))
-    {
-        $key = $_GET['contentPath'];
-    }
-    $currentContent = new Content();
-    $parents = [];
-    $children = [];
-    $leftContent = null;
-    $rightContent = null;
-
-
-    $isGetCurrentContent = true;
-    //CurrentContentの取得
-    if($currentContent->SetContent($key))
-    {
-        $isGetCurrentContent = true;
-
-        //ChildContentsの取得
-        $childrenPathList = $currentContent->GetChildren();
-        for($i = 0; $i < count($childrenPathList); $i++)
-        {
-            $child = $currentContent->GetChild($i);
-            if($child !== false){
-                array_push($children, $child);
-            }
-        }
-
-        //Parentsの取得
-        $parent = $currentContent->GetParent();
-        for($i = 0; $i < $parentsMaxCount; $i++)
-        {
-            if($parent === false)
-            {
-                break;
-            }
-            array_push($parents, $parent);
-            $parent = $parent->GetParent();
-        }
-
-        //LeftContent, RightContentの取得
-        if(isset($parents[0]))
-        {
-            $parent = $parents[0];
-            $brothers = $parent->GetChildren();
-            $myIndex = $currentContent->GetIndex();
-            if($myIndex >= 0)
-            {
-                if($myIndex > 0)
-                {
-                    $leftContent = $parent->GetChild($myIndex - 1);
-                }
-                if($myIndex <  count($brothers) - 1)
-                {
-                    $rightContent = $parent->GetChild($myIndex + 1);
-                }
-            }
-        }
-
+    if($isGetCurrentContent){
+    
         //title作成
         $title = "";
-        $title .= $currentContent->GetTitle();
+        $title .= $currentContent->Title();
         if(isset($parents[0]))
         {
-            $title .=" | " . $parents[0]->GetTitle();
+            $title .=" | " . $parents[0]->Title();
         }
 
         echo "<title>".$title."</title>";
     }
-    else
-    {
-        $isGetCurrentContent = false;
+    else{
+        
         echo "<title>NotExist</title>";
     }
-    ?>
 
-    <?php
+
     readfile("Common/CommonHead.html");
     ?>
+
 </head>
+
 <body>
     <div id="HeaderArea">
-        <a href="./?contentPath=./Contents/Root.html">ContentsViewer</a>
+        <a href="./?content=./Contents/Root">ContentsViewer</a>
     </div>
+
+    
+
     <?php
 
-    //===コード==================================================
 
+    
     //CurrentContentを取得したかどうか
+
+
     if(!$isGetCurrentContent)
     {
+        $isFatalError = true;
         echo '<div id="ErrorMessageBox">';
-        echo  '<h1>Error!</h1> <br>存在しないContentにアクセスした可能性があります.';
+        echo  '<h1>Error!</h1> <br/>存在しないContentにアクセスした可能性があります.';
+        
+
+        
+        //if(isset($_GET['contentPath'])){
+        //    $path = $_GET['contentPath'];
+
+        //    $path = str_replace(".html", "", $path);
+
+        //    //$url = "http://webviewer.php.xdomain.jp/?content=" . $path;
+        //    $url = "http://localhost/?content=" . $path;
+
+        //    echo "<br/>旧式のURLであると解釈しました. 新しいアドレスへ自動でリダイレクトします.<br/>";
+        //    echo "<a href='" . $url . "'>" . $url . "</a>";
+        //    //echo $url;
+        //    $isFatalError = false;
+        //    header("Location: {$url}");
+
+
+
+        //}
+
         echo '</div>';
+
+        //if($isFatalError){
+        //}
         exit();
     }
     //---Navigator作成---------------------------------------------------------------------------------------------------
@@ -176,7 +217,7 @@
     echo "</div>";
 
 
-    //---MainArea--------------------------------------------------------------------------------------------------------
+    ////---MainArea--------------------------------------------------------------------------------------------------------
     echo '<div id="MainArea">';
 
     //最終更新欄
@@ -186,8 +227,8 @@
     echo '</div>';
 
     // 概要欄
-    echo '<div id="AbstractField" class="Abstract">';
-    echo $currentContent->GetAbstract();
+    echo '<div id="SummaryField" class="Summary">';
+    echo $currentContent->Summary();
     echo '</div>';
     
     // 目次欄(小画面で表示される)
@@ -196,8 +237,8 @@
     echo "</div>";
 
     //本編
-    echo '<div id="RootContentField" class="RootContent">';
-    echo $currentContent->GetRootContent();
+    echo '<div id="MainContentField" class="MainContent">';
+    echo $currentContent->Body();
     echo '</div>';
 
     //子コンテンツ
@@ -207,41 +248,41 @@
         echo "<div style='width:100%; display: table'>";
 
         //A-----
-        echo "<div style='display: table-cell; width: 90%;'>";
+        echo "<div style='display: table-cell'>";
 
-        echo '<a class="LinkButtonBlock" href ="'.CreateHREF($children[$i]->GetPath()).'">';
-        echo $children[$i]->GetTitle();
+        echo '<a class="LinkButtonBlock" href ="'.CreateHREF($children[$i]->Path()).'">';
+        echo $children[$i]->Title();
         echo '</a>';
 
         echo "</div>";
         //---
 
-        //B-----
-        echo "<div class='ChildDetailButton' style='display:table-cell;  width:10%;' "
-        .'onmouseover="QuickLookMouse('
-        ."'ChildContent"
-        .$i
-        ."')"
-        .'" '
-        .'ontouchstart="QuickLookTouch('
-        ."'ChildContent"
-        .$i
-        ."')"
-        .'" '
-        .'onmouseout="ExitQuickLookMouse()" '
-        .'ontouchend="ExitQuickLookTouch()"'
-        ."></div>";
-        //---
+        ////B-----
+        //echo "<div class='ChildDetailButton' style='display:table-cell;  width:10%;' "
+        //.'onmouseover="QuickLookMouse('
+        //."'ChildContent"
+        //.$i
+        //."')"
+        //.'" '
+        //.'ontouchstart="QuickLookTouch('
+        //."'ChildContent"
+        //.$i
+        //."')"
+        //.'" '
+        //.'onmouseout="ExitQuickLookMouse()" '
+        //.'ontouchend="ExitQuickLookTouch()"'
+        //."></div>";
+        ////---
 
-        //C-----
-        echo "<div class='ContentContainer' "
-        ."id='ChildContent".$i."Container"."'"
-        .">";
-        echo "<h1>" . $children[$i]->GetTitle(). "</h1>";
-        echo "<div>" . $children[$i]->GetAbstract(). "</div>";
-        echo "<div>" . $children[$i]->GetRootContent(). "</div>";
-        echo "</div>";
-        //---
+        ////C-----
+        //echo "<div class='ContentContainer' "
+        //."id='ChildContent".$i."Container"."'"
+        //.">";
+        //echo "<h1>" . $children[$i]->GetTitle(). "</h1>";
+        //echo "<div>" . $children[$i]->GetAbstract(). "</div>";
+        //echo "<div>" . $children[$i]->GetRootContent(). "</div>";
+        //echo "</div>";
+        ////---
 
         echo "</div>";
 
@@ -261,6 +302,7 @@
 
     //親コンテンツ
     echo '<div id="ParentField" class="ParentField">';
+    //echo var_dump($parents);
     for($i = 0; $i < count($parents); $i++)
     {
         $index = count($parents) - $i - 1;
@@ -270,8 +312,8 @@
         }
         else
         {
-            echo '<a  href ="'.CreateHREF($parents[$index]->GetPath()).'">';
-            echo $parents[$index]->GetTitle();
+            echo '<a  href ="'.CreateHREF($parents[$index]->Path()).'">';
+            echo $parents[$index]->Title();
             echo '</a>';
         }
         echo ' &gt; ';
@@ -280,96 +322,65 @@
 
     //タイトル欄
     echo '<div id="TitleField" class="Title">';
-    echo $currentContent->GetTitle();
+    echo $currentContent->Title();
     echo '</div>';
 
     echo' </div>';
 
+    
     //---BottomRightArea----------------------------------------------------------------------------------------------
-
+    //echo $myIndex;
     if(!is_null($rightContent))
     {
-    ?>
-    <div id="BottomRightArea"
-        onmouseover="QuickLookMouse('RightContent')"
-        onmouseout="ExitQuickLookMouse()"
-        ontouchstart="QuickLookTouch('RightContent')"
-        ontouchend="ExitQuickLookTouch()">
 
-        <?php
-        if($rightContent===false)
+        if($rightContent !== false)
         {
-            echo "Error; 存在しないコンテンツです >";
-        }
-        else
-        {
-            echo '<a  href ="'.CreateHREF($rightContent->GetPath()).'">';
-            echo  mb_strimwidth($rightContent->GetTitle(), 0, $brotherTitleMaxStrWidth, "...", "UTF-8") . " &gt;";
+            echo '<a id="BottomRightArea"  href ="'.CreateHREF($rightContent->Path()).'">';
+            echo  mb_strimwidth($rightContent->Title(), 0, $brotherTitleMaxStrWidth, "...", "UTF-8") . " &gt;";
             echo '</a>';
-            echo "<div id = 'RightContentContainer' class='ContentContainer'>";
-            echo "<h1>" . $rightContent->GetTitle(). "</h1>";
-            echo "<div>" . $rightContent->GetAbstract(). "</div>";
-            echo "<div>" . $rightContent->GetRootContent(). "</div>";
-            echo "</div>";
+            //echo "<div id = 'RightContentContainer' class='ContentContainer'>";
+            //echo "<h1>" . $rightContent->GetTitle(). "</h1>";
+            //echo "<div>" . $rightContent->GetAbstract(). "</div>";
+            //echo "<div>" . $rightContent->GetRootContent(). "</div>";
+            //echo "</div>";
         }
-        ?>
-    </div>
-    <?php
     }
 
     //---BottomLeftArea------------------------------------------------------------------------------------------------
     if(!is_null($leftContent))
     {
-    ?>
-    <div id="BottomLeftArea"
-        onmouseover="QuickLookMouse('LeftContent')"
-        onmouseout="ExitQuickLookMouse()"
-        ontouchstart="QuickLookTouch('LeftContent')"
-        ontouchend="ExitQuickLookTouch()">
 
-        <?php
-        if($leftContent===false)
+        if($leftContent !== false)
         {
-            echo "Error; 存在しないコンテンツです >";
-        }
-        else
-        {
-            echo '<a  href ="'.CreateHREF($leftContent->GetPath()).'">';
-            echo  "&lt; ". mb_strimwidth($leftContent->GetTitle(), 0, $brotherTitleMaxStrWidth, "...", "UTF-8");
+            echo '<a id="BottomLeftArea" href ="'.CreateHREF($leftContent->Path()).'">';
+            echo  "&lt; ". mb_strimwidth($leftContent->Title(), 0, $brotherTitleMaxStrWidth, "...", "UTF-8");
             echo '</a>';
-            echo "<div id = 'LeftContentContainer' class='ContentContainer'>";
-            echo "<h1>" . $leftContent->GetTitle(). "</h1>";
-            echo "<div>" . $leftContent->GetAbstract(). "</div>";
-            echo "<div>" . $leftContent->GetRootContent(). "</div>";
-            echo "</div>";
+            //echo "<div id = 'LeftContentContainer' class='ContentContainer'>";
+            //echo "<h1>" . $leftContent->GetTitle(). "</h1>";
+            //echo "<div>" . $leftContent->GetAbstract(). "</div>";
+            //echo "<div>" . $leftContent->GetRootContent(). "</div>";
+            //echo "</div>";
         }
-        ?>
-    </div>
-    <?php
     }
-    //-----QuickLookArea---------------------------------------------------------
-    ?>
-    <div id='QuickLookArea'></div>
 
-    <?php
     //contentPathからaタグで用いられる参照を返します
     function CreateHREF($contentPath)
     {
-        return '/?contentPath=' . $contentPath;
+        return '/?content=' . $contentPath;
     }
 
     function CreateNavHelper(&$parents, $parentsIndex, &$currentContent, &$children,  &$navigator){
         if($parentsIndex < 0){
 
             $navigator.=  "<li>";
-            $navigator.=  "<a class = 'Selected' href='" . CreateHREF($currentContent->GetPath()) . "'>" . $currentContent->GetTitle() . "</a>";
+            $navigator.=  "<a class = 'Selected' href='" . CreateHREF($currentContent->Path()) . "'>" . $currentContent->Title() . "</a>";
             $navigator.=  "</li>";
 
             $navigator.="<ul>";
             foreach($children as $c){
 
                 $navigator.=  "<li>";
-                $navigator.=  "<a href='" . CreateHREF($c->GetPath()) . "'>" . $c->GetTitle() . "</a>";
+                $navigator.=  "<a href='" . CreateHREF($c->Path()) . "'>" . $c->Title() . "</a>";
                 $navigator.=  "</li>";
             }
             $navigator.="</ul>";
@@ -377,56 +388,56 @@
             return;
         }
 
-        $childrenCount = $parents[$parentsIndex]->GetChildrenCount();
+        $childrenCount = $parents[$parentsIndex]->ChildCount();
 
         $navigator.=  "<li>";
-        $navigator.=  "<a class = 'Selected' href='" . CreateHREF($parents[$parentsIndex]->GetPath()) . "'>" . $parents[$parentsIndex]->GetTitle() . "</a>";
+        $navigator.=  "<a class = 'Selected' href='" . CreateHREF($parents[$parentsIndex]->Path()) . "'>" . $parents[$parentsIndex]->Title() . "</a>";
         $navigator.=  "</li>";
 
         $navigator.=  "<ul>";
         if($parentsIndex == 0){
-            $currentContentIndex = $currentContent->GetIndex();
+            $currentContentIndex = $currentContent->ChildIndex();
             for($i = 0; $i < $childrenCount; $i++){
 
-                $child = $parents[$parentsIndex]->GetChild($i);
+                $child = $parents[$parentsIndex]->Child($i);
                 if($child === false){
                     continue;
                 }
 
                 if($i == $currentContentIndex){
                     $navigator.=  "<li>";
-                    $navigator.=  "<a class = 'Selected' href='" . CreateHREF($child->GetPath()) . "'>" . $child->GetTitle() . "</a>";
+                    $navigator.=  "<a class = 'Selected' href='" . CreateHREF($child->Path()) . "'>" . $child->Title() . "</a>";
                     $navigator.=  "</li>";
 
                     $navigator.="<ul>";
                     foreach($children as $c){
                         $navigator.=  "<li>";
-                        $navigator.=  "<a href='" . CreateHREF($c->GetPath()) . "'>" . $c->GetTitle() . "</a>";
+                        $navigator.=  "<a href='" . CreateHREF($c->Path()) . "'>" . $c->Title() . "</a>";
                         $navigator.=  "</li>";
                     }
                     $navigator.="</ul>";
                 }
                 else{
                     $navigator.=  "<li>";
-                    $navigator.=  "<a href='" . CreateHREF($child->GetPath()) . "'>" . $child->GetTitle() . "</a>";
+                    $navigator.=  "<a href='" . CreateHREF($child->Path()) . "'>" . $child->Title() . "</a>";
                     $navigator.=  "</li>";
                 }
             }
         }
         else{
-            $nextParentIndex = $parents[$parentsIndex - 1]->GetIndex();
+            $nextParentIndex = $parents[$parentsIndex - 1]->ChildIndex();
             for($i = 0; $i < $childrenCount; $i++){
 
                 if($i == $nextParentIndex){
                     CreateNavHelper($parents, $parentsIndex-1, $currentContent, $children, $navigator);
                 }
                 else{
-                    $child = $parents[$parentsIndex]->GetChild($i);
+                    $child = $parents[$parentsIndex]->Child($i);
                     if($child === false){
                         continue;
                     }
                     $navigator.=  "<li>";
-                    $navigator.=  "<a href='" . CreateHREF($child->GetPath()) . "'>" . $child->GetTitle() . "</a>";
+                    $navigator.=  "<a href='" . CreateHREF($child->Path()) . "'>" . $child->Title() . "</a>";
                     $navigator.=  "</li>";
                 }
             }

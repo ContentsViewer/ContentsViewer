@@ -1,0 +1,14 @@
+<Header>
+    <CreatedAt> 2018/4/16
+    <Title> Root
+
+    <Summary>
+        ここにはこのコンテンツに関する概要を書きます
+    </Summary>
+
+	<Child> PageA
+	<Child> PageB
+	<Child> PageC
+</Header>
+
+ここにはこのコンテンツ自身の内容を書きます

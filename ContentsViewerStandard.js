@@ -10,7 +10,7 @@ var isTouchDevice = false;
 
 var doseHideHeader = false;
 
-var sectionListInRootContent = [];
+var sectionListInMainContent = [];
 var sectionListInIndexArea = [];
 
 var timer = null;
@@ -31,10 +31,10 @@ window.onload = function () {
 	// --- indexArea関係 --------------------------------------------
 	var indexArea = document.getElementById("IndexArea");
 	var indexAreaOnSmallScreen = document.getElementById("IndexAreaOnSmallScreen");
-	var rootContent = document.getElementById("RootContentField");
+	var mainContent = document.getElementById("MainContentField");
 
-	// indexAreaとrootContentが正常に読み込めた場合のみ実行
-	if (rootContent && indexArea) {
+	// indexAreaとmainContentが正常に読み込めた場合のみ実行
+	if (mainContent && indexArea) {
 		// IndexArea内にあるNaviを取得
 		var naviInIndexArea = null;
 		if (indexArea.getElementsByClassName("Navi").length > 0) {
@@ -44,7 +44,7 @@ window.onload = function () {
 		// Naviを取得できた場合のみ実行
 		if (naviInIndexArea) {
 			var totalID = 0;
-			if ((totalID = CreateSectionTreeHelper(rootContent, naviInIndexArea, 0)) == 0) {
+			if (mainContent.children.length == 0 || (totalID = CreateSectionTreeHelper(mainContent.children[0], naviInIndexArea, 0)) == 0) {
 				naviInIndexArea.innerText = "  目次がありません";
 			}
 
@@ -63,10 +63,10 @@ window.onload = function () {
 		
 			alert(naviInIndexArea);
 
-			// RootContent内にあるSectionごとの処理
-			for (var i = 0; i < sectionListInRootContent.length; i++) {
+			// MainContent内にあるSectionごとの処理
+			for (var i = 0; i < sectionListInMainContent.length; i++) {
 				var section = document.createElement("li");
-				section.innerText = sectionListInRootContent[i].innerText;
+				section.innerText = sectionListInMainContent[i].innerText;
 				naviInIndexArea.appendChild(section);
 			}
 		}
@@ -74,12 +74,12 @@ window.onload = function () {
 	}
 
 
-	//alert(rootContent);
+	//alert(mainContent);
 }
 
 //
-// RootContent内にあるSectionを取得します. 
-// 同時に, ナヴィゲータの作成, sectionListInRootContent, sectionListInIndexAreaにSectionを登録します.
+// mainContent内にあるSectionを取得します.
+// 同時に, ナヴィゲータの作成, sectionListInMainContent, sectionListInIndexAreaにSectionを登録します.
 //
 // @param element:
 //  Section探索元
@@ -93,47 +93,52 @@ window.onload = function () {
 //
 function CreateSectionTreeHelper(element, navi, idBegin) {
 
+
+	var ulElement = document.createElement("ul");
+
+
 	for (var i = 0; i < element.children.length; i++) {
 
-		if (element.children[i].className == "SectionList") {
-			var ulElement = document.createElement("ul");
 
-			// UL内の各LIをイテレート
-			for (var j = 0; j < element.children[i].children.length; j++) {
-				// LI内の各子要素をイテレート
-				for (var k = 0; k < element.children[i].children[j].children.length; k++) {
-					// Class名Section, SubSectionのとき題名取得
-					if (element.children[i].children[j].children[k].className == "Section"
-						|| element.children[i].children[j].children[k].className == "SubSection") {
-						//alert(element.children[i].children[j].children[k].innerText);
-
-						element.children[i].children[j].children[k].setAttribute("id", "SectionID_" + idBegin);
-						sectionListInRootContent.push(element.children[i].children[j]);
-
-						var section = document.createElement("li");
-						var link = document.createElement("a");
-						link.innerText = element.children[i].children[j].children[k].innerText;
-						link.href = "#SectionID_" + idBegin;
-						section.appendChild(link);
-
-						sectionListInIndexArea.push(link);
-
-						idBegin = CreateSectionTreeHelper(element.children[i].children[j], section, ++idBegin);
-						ulElement.appendChild(section);
+		//alert("12");
+		if (element.children[i].className == "SectionTitle"
+			|| element.children[i].className == "SubSectionTitle") {
 
 
-						// 一つのSectionに二つ以上の名前が存在することはないので, 一つ見つけたらループを抜ける.
-						break;
-					}
-				}
+
+			//alert("12");
+			element.children[i].setAttribute("id", "SectionID_" + idBegin);
+
+			var section = document.createElement("li");
+			var link = document.createElement("a");
+			link.innerText = element.children[i].innerText;
+			link.href = "#SectionID_" + idBegin;
+			section.appendChild(link);
+
+			sectionListInIndexArea.push(link);
+
+			ulElement.appendChild(section);
+
+
+			if (i + 1 < element.children.length
+				&& element.children[i + 1].className == "Section") {
+
+
+
+				sectionListInMainContent.push(element.children[i + 1]);
+
+				idBegin = CreateSectionTreeHelper(element.children[i + 1], section, ++idBegin);
+
 			}
-			navi.appendChild(ulElement);
 
 
-			// SectionListが同階層に二つ以上存在することはないので,
-			// 少なくとも一つ見つけたらループを抜ける.
-			break;
 		}
+
+
+	}
+
+	if (ulElement.children.length > 0) {
+		navi.appendChild(ulElement);
 	}
 	return idBegin;
 }
@@ -151,7 +156,7 @@ function OnScroll() {
 			if (!doseHideHeader) {
 				headerArea.style.animationName = "HeaderAreaDisappear";
 				headerArea.style.animationDuration = "1s";
-				headerArea.style.width = "0px";
+				headerArea.style.width = "0%";
 
 				topArea.style.animationName = "TopAreaSlideUp";
 				topArea.style.animationDuration = "1s";
@@ -184,8 +189,8 @@ function OnScroll() {
 		//alert("1");
 
 		var currentSectionIDs = [];
-		for (var i = 0; i < sectionListInRootContent.length; i++) {
-			var sectionRect = sectionListInRootContent[i].getBoundingClientRect();
+		for (var i = 0; i < sectionListInMainContent.length; i++) {
+			var sectionRect = sectionListInMainContent[i].getBoundingClientRect();
 			if (sectionRect.top < window.innerHeight / 2 && sectionRect.bottom > window.innerHeight / 2) {
 				currentSectionIDs.push(i);
 			}
