@@ -102,7 +102,9 @@ function CreateSectionTreeHelper(element, navi, idBegin) {
 
 		//alert("12");
 		if (element.children[i].className == "SectionTitle"
-			|| element.children[i].className == "SubSectionTitle") {
+			|| element.children[i].className == "SubSectionTitle"
+			|| element.children[i].className == "SubSubSectionTitle"
+			|| element.children[i].className == "SubSubSubSectionTitle") {
 
 
 
@@ -119,6 +121,7 @@ function CreateSectionTreeHelper(element, navi, idBegin) {
 
 			ulElement.appendChild(section);
 
+			idBegin++;
 
 			if (i + 1 < element.children.length
 				&& element.children[i + 1].className == "Section") {
@@ -127,8 +130,12 @@ function CreateSectionTreeHelper(element, navi, idBegin) {
 
 				sectionListInMainContent.push(element.children[i + 1]);
 
-				idBegin = CreateSectionTreeHelper(element.children[i + 1], section, ++idBegin);
+				idBegin = CreateSectionTreeHelper(element.children[i + 1], section, idBegin);
 
+			}
+			else{
+				
+				sectionListInMainContent.push(null);
 			}
 
 
@@ -190,6 +197,9 @@ function OnScroll() {
 
 		var currentSectionIDs = [];
 		for (var i = 0; i < sectionListInMainContent.length; i++) {
+			if(sectionListInMainContent[i] == null){
+				continue;
+			}
 			var sectionRect = sectionListInMainContent[i].getBoundingClientRect();
 			if (sectionRect.top < window.innerHeight / 2 && sectionRect.bottom > window.innerHeight / 2) {
 				currentSectionIDs.push(i);

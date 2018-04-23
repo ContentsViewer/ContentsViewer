@@ -99,7 +99,7 @@ class OutlineText{
 
 
         // --- 複数行にまたがって存在する情報 -------------
-        $indentLevelPrev = -1;
+        $indentLevelPrevious = -1;
         $startSpaceCount = 0;
         $tagBlockLevel = 0;
 
@@ -110,6 +110,7 @@ class OutlineText{
         $beginParagraph = false;
         $beginList = false;
         $beginTable = false;
+        $listItemIndentLevel = 0;
         $tableColumnHeadCount = 0;
         $beginTableBody = false;
 
@@ -192,7 +193,18 @@ class OutlineText{
                     }
 
                     if($beginList){
-                        $output .= "</ul>";
+                        //echo $listItemIndentLevel;
+                        $indentLevelPrevious -= $listItemIndentLevel;
+
+                        while($listItemIndentLevel >= 0){
+                            $output .= "</li></ul>";
+                            //echo "sa";
+                            $listItemIndentLevel--;
+                        }
+
+                        $listItemIndentLevel = 0;
+
+                        //Debug::Log($output);
                         $beginList = false;
                     }
 
@@ -248,7 +260,7 @@ class OutlineText{
                     continue;
                 }
 
-                // --- ここから, PlainWritingのDecode処理が行われる.
+                // --- ここから, OutlineTextのDecode処理が行われる.
 
                 //Debug::Log( $blocks[$j]);
                 
@@ -281,13 +293,7 @@ class OutlineText{
                     //}
                     
 
-                    // spaceを取り除く
-                    $blocks[$j] = substr($blocks[$j], $spaceCount);
                     
-                    // spaceを取り除いて, 何も残らなかった場合
-                    if(strlen($blocks[$j]) == 0){
-                        continue;
-                    }
                     //$indentLevel = ($spaceCount - $startSpaceCount) / static::$indentSpace;
                     //echo strlen($blocks[$j]) . ": " . $blocks[$j] . "<br>";
 
@@ -296,27 +302,85 @@ class OutlineText{
                     // End indentの計算 ----------
 
 
-                    $alreadySectionTagSetted = false;
+                    //$alreadySectionTagSetted = false;
+                    
 
-                    if($indentLevel > $indentLevelPrev){
-                        $levelDiff = $indentLevel - $indentLevelPrev;
+
+                    //
+                    // インデントレベルの変化を見る
+                    //
+                    // 処理過程
+                    //  リストブロック中である
+                    //   リストアイテムのレベルを変更する
+                    //
+                    //  その他
+                    //   セクションのレベルを変更する
+                    // 
+                    // 行頭がSpaceのみの場合でも, 
+                    // インデントレベル変更によるセクションタグの作成が起こる可能性がある.
+
+                    // 右へインデント
+                    $indentLevelDiff = $indentLevel - $indentLevelPrevious;
+                    if($indentLevel > $indentLevelPrevious){
+                        $levelDiff = $indentLevel - $indentLevelPrevious;
 
                         while($levelDiff > 0){
-                            $output .= "<div class='Section'>";
+                            //echo "->:" . $blocks[$j];
+
+                            if($beginList){
+                                $output .= "<ul>";
+                                $listItemIndentLevel++;
+                            }else{
+                                $output .= "<div class='Section'>";
+                            }
+
+
                             $levelDiff--;
                         }
                         
                     }
 
-                    if($indentLevel < $indentLevelPrev){
-                        $levelDiff = $indentLevelPrev - $indentLevel;
+                    // 左へインデント
+                    if($indentLevel < $indentLevelPrevious){
+                        $levelDiff = $indentLevelPrevious - $indentLevel;
+                        if($beginList){
+                            $output .= "</li>";
+                        }
 
                         while($levelDiff > 0){
-                            $output .= "</div>";
+                            //echo "<-:" . $blocks[$j];
+
+
+                            if($beginList){
+                                $output .= "</ul></li>";
+                                $listItemIndentLevel--;
+                            }else{
+                                $output .= "</div>";
+                            }
+
+
+
                             $levelDiff--;
                         }
                     }
+                    
+                    // インデントそのまま
+                    if($indentLevel == $indentLevelPrevious){
+                        if($beginList){
+                            $output .= "</li>";
+                        }
+                    }
 
+                    $indentLevelPrevious = $indentLevel;
+
+                    // spaceを取り除く
+                    $blocks[$j] = substr($blocks[$j], $spaceCount);
+                    // spaceを取り除いて, 何も残らなかった場合
+                    if(strlen($blocks[$j]) == 0){
+                        continue;
+                    }
+
+                    
                     $ret = 0;
                     $matches = array();
                     if(preg_match("/^#/", $blocks[$j]) === 1){
@@ -341,8 +405,14 @@ class OutlineText{
                         if($indentLevel <= 0){
                             $output .= "class = 'SectionTitle'>";
                         }
-                        else{
+                        elseif($indentLevel == 1){
                             $output .= "class = 'SubSectionTitle'>";
+                        }
+                        elseif($indentLevel == 2){
+                            $output .= "class = 'SubSubSectionTitle'>";
+                        }
+                        else{
+                            $output .= "class = 'SubSubSubSectionTitle'>";
                         }
 
 
@@ -352,9 +422,26 @@ class OutlineText{
 
 
                         $blocks[$j] = substr($blocks[$j], 1);
+                        // if($beginList){
+                        //     $output .= "</li>";
+                        // }
 
                         if(!$beginList){
                             $output .= "<ul>";
+                            $listItemIndentLevel = 0;
+                            $beginList = true;
+                        }
+
+                        $output .= "<li>";
+                        $beginListItem = true;
+                    }
+                    elseif(preg_match("/^\+/", $blocks[$j]) === 1){
+
+                        $blocks[$j] = substr($blocks[$j], 1);
+
+                        if(!$beginList){
+                            $output .= "<ul class='Tree'>";
+                            $listItemIndentLevel = 0;
                             $beginList = true;
                         }
 
@@ -447,17 +534,6 @@ class OutlineText{
 
 
 
-                    //if($indentLevel != $indentLevelPrev){
-                    //    if($indentLevel > $indentLevelPrev){
-                    //        $output .= "<ul class='SectionList'> <li>";
-                    //    }    
-                    //    else {
-                    //        $output .= "</li> </ul>";
-                    //    }
-                    //    $indentLevelPrev = $indentLevel;
-                    //}
-
-                    $indentLevelPrev = $indentLevel;
 
                 } // End 行頭処理 -----------
 
@@ -489,10 +565,10 @@ class OutlineText{
                 $output .= "</h" . ($indentLevel + 2) . ">";
             }
 
-            if($beginListItem){
+            // if($beginListItem){
             
-                $output .= "</li>";
-            }
+            //     $output .= "</li>";
+            // }
 
             if($beginTableRow){
                 $output .= "</tr>";
@@ -503,13 +579,19 @@ class OutlineText{
 
         } // End 各行ごとに対して
         
+        // すべての行の処理を終えた場合
+        // ファイルの終端に到達した.
 
         if($beginParagraph){
             $output .= "</p>";
         }
 
         if($beginList){
-            $output .= "</ul>";
+            while($listItemIndentLevel >= 0){
+                $output .= "</li></ul>";
+                $listItemIndentLevel--;
+            }
+            $listItemIndentLevel = 0;
         }
 
         if($beginTable){
@@ -524,9 +606,9 @@ class OutlineText{
         }
 
         //echo ": " . $indentLevelPrev;
-        while($indentLevelPrev >= 0){
+        while($indentLevelPrevious >= 0){
             $output .= "</div>";
-            $indentLevelPrev--;
+            $indentLevelPrevious--;
         }
         //Debug::Log($output);
 

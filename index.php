@@ -7,7 +7,7 @@
     $rootContentPath = 'Contents/Root';
     $contentsDataBaseURL = 'ContentsDataBase.php';
     $parentsMaxCount = 3;
-    $brotherTitleMaxStrWidth = 20;
+    $brotherTitleMaxStrWidth = 40;
 
 
     $key =$rootContentPath;
@@ -119,6 +119,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
 
     <link rel="stylesheet" href="ContentsViewerStandard.css" />
+    <link rel="stylesheet" href="GUILayout.css" />
+    <script src="GUILayout.js"></script>
     <script src="ContentsViewerStandard.js"></script>
 
 
