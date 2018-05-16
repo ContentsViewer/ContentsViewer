@@ -381,6 +381,13 @@ table.Standard {
 
 
 
+code{
+    padding: 2px 4px;
+    font-size: 90%;
+    /* color: #4a4a4a; */
+    background-color: #ffffff;
+    border-radius: 3px;
+}
 
 
 

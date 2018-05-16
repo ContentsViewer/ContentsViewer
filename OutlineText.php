@@ -4,7 +4,7 @@
 class OutlineText{
     
     private static $indentSpace = 4;
-    private static $blockTagList = [
+    private static $htmlTagList = [
         "script", "noscript",
 
         "p", "pre", "ol", "ul", "li", "dl", "dt", "dd", "figure", "figcaption", "div",
@@ -29,9 +29,6 @@ class OutlineText{
 
 
 
-
-
-
     private static $patternForSplitBlock;
     private static $patternTagBlockStartTag;
     private static $patternTagBlockEndTag;
@@ -41,9 +38,9 @@ class OutlineText{
     
         // ブロックごとに区切るためのpattern
         static::$patternForSplitBlock = "/";
-        $blockTagCount = count(static::$blockTagList);
+        $blockTagCount = count(static::$htmlTagList);
         for($i = 0; $i < $blockTagCount; $i++){
-            static::$patternForSplitBlock .= "(<" . static::$blockTagList[$i] . "\b.*?>)|(<\/" . static::$blockTagList[$i] . " *?>)";
+            static::$patternForSplitBlock .= "(<" . static::$htmlTagList[$i] . "\b.*?>)|(<\/" . static::$htmlTagList[$i] . " *?>)";
             if($i < $blockTagCount - 1){
                 static::$patternForSplitBlock .= "|";
             }
@@ -55,9 +52,9 @@ class OutlineText{
 
 
         static::$patternTagBlockStartTag = "/";
-        $blockTagCount = count(static::$blockTagList);
+        $blockTagCount = count(static::$htmlTagList);
         for($i = 0; $i < $blockTagCount; $i++){
-            static::$patternTagBlockStartTag .=  "(<" . static::$blockTagList[$i] . "\b.*?>)";
+            static::$patternTagBlockStartTag .=  "(<" . static::$htmlTagList[$i] . "\b.*?>)";
             if($i < $blockTagCount - 1){
                 static::$patternTagBlockStartTag .= "|";
             }
@@ -70,9 +67,9 @@ class OutlineText{
 
         
         static::$patternTagBlockEndTag = "/";
-        $blockTagCount = count(static::$blockTagList);
+        $blockTagCount = count(static::$htmlTagList);
         for($i = 0; $i < $blockTagCount; $i++){
-            static::$patternTagBlockEndTag .= "(<\/" . static::$blockTagList[$i] . " *?>)";
+            static::$patternTagBlockEndTag .= "(<\/" . static::$htmlTagList[$i] . " *?>)";
             if($i < $blockTagCount - 1){
                 static::$patternTagBlockEndTag .= "|";
             }
@@ -113,7 +110,8 @@ class OutlineText{
         $listItemIndentLevel = 0;
         $tableColumnHeadCount = 0;
         $beginTableBody = false;
-
+        $beginCodeBlock = false;
+        
         // End 複数行にまたがって存在する情報 --------------
 
         // 各行ごとに対して
@@ -153,7 +151,26 @@ class OutlineText{
             }
 
 
+            // --- Code block ----------------------
+            
+            if($beginCodeBlock){
+                $matches = array();
+                if(preg_match("/```(`*)/", $lines[$i],$matches)){
+                    // Code block から出る
+                    $output .= "</pre>";
 
+                    $beginCodeBlock = false;
+                }
+                else{
+                    $output .= static::EscapeSpecialCharacters($lines[$i]) . "\n";
+                
+                }
+                //$output .= $lines[$i] . "\n";
+                
+                continue;
+            }
+
+            // End Code block -------
 
             // --- indentLevelの計算 -----------------------------
             $wordCount = strlen($lines[$i]);
@@ -174,7 +191,9 @@ class OutlineText{
             $indentLevel = ($spaceCount - $startSpaceCount) / static::$indentSpace;
             //echo $startSpaceCount;
 
-            // End indentLevelの計算
+            // End indentLevelの計算 ------------------------
+
+
 
 
 
@@ -232,7 +251,9 @@ class OutlineText{
             $blockCount = count($blocks);
             
             //Debug::Log($blocks);
-                
+            
+
+            
             for($j = 0; $j < $blockCount; $j++){
                 
                 $isTag = false;
@@ -260,51 +281,14 @@ class OutlineText{
                     continue;
                 }
 
-                // --- ここから, OutlineTextのDecode処理が行われる.
+                // --- ここから, OutlineTextのDecode処理が行われる. -------------------------------
 
                 //Debug::Log( $blocks[$j]);
                 
                 // はじめのブロック; 行頭に対して
                 if($j == 0){
                     
-                    //// --- indentLevelの計算 -----------------------------
-                    //$wordCount = strlen($blocks[$j]);
-                    //$spaceCount = 0;
-                    //for($spaceCount = 0; $spaceCount < $wordCount; $spaceCount++){
-                    //    if($blocks[$j][$spaceCount] != ' '){
-                    //        break;
-                    //    }
-                    //}
-
-
-                    //// すべて, Spaceのとき
-                    //if($spaceCount == $wordCount){
-                    //    $emptyLineCount++;
-
-
-                    //    if($beginParagraph){
-                    //        $output .= "</p>";
-                    //        $beginParagraph = false;
-
-                    //    }
-
-
-                    //    continue;
-                    //}
                     
-
-                    
-                    //$indentLevel = ($spaceCount - $startSpaceCount) / static::$indentSpace;
-                    //echo strlen($blocks[$j]) . ": " . $blocks[$j] . "<br>";
-
-                    //echo $indentLevel;
-
-                    // End indentの計算 ----------
-
-
-                    //$alreadySectionTagSetted = false;
-                    
-
 
                     //
                     // インデントレベルの変化を見る
@@ -375,31 +359,20 @@ class OutlineText{
 
                     // spaceを取り除く
                     $blocks[$j] = substr($blocks[$j], $spaceCount);
+
                     // spaceを取り除いて, 何も残らなかった場合
                     if(strlen($blocks[$j]) == 0){
                         continue;
                     }
 
                     
+
+
                     $ret = 0;
                     $matches = array();
+                    
+                    // --- 見出し --------------------                    
                     if(preg_match("/^#/", $blocks[$j]) === 1){
-                        //if(!$alreadySectionTagSetted && $indentLevel > $indentLevelPrev){
-                        //    $output .= "<ul class='SectionList'> <li>";
-                        //    $alreadySectionTagSetted = true;
-                        //}
-
-                        //if($indentLevel == $indentLevelPrev){
-                        //    $output .= "</li><li>";
-                        //}
-
-                        //if(!$alreadySectionTagSetted && $indentLevel < $indentLevelPrev){
-                        //    $output .= "</li> </ul> <li>";
-                        //    $alreadySectionTagSetted = true;
-                        //}
-                        //$output .= "<h" . ($indentLevel + 2) . ">" . substr($blocks[$j], 1) . "</h". ($indentLevel + 2) . ">";
-                        $blocks[$j] = substr($blocks[$j], 1);
-
                         
                         $output .= "<h" . ($indentLevel + 2) . " ";
                         if($indentLevel <= 0){
@@ -415,16 +388,15 @@ class OutlineText{
                             $output .= "class = 'SubSubSubSectionTitle'>";
                         }
 
+                        $output .= static::DecodeSpanElements(substr($blocks[$j], 1));
 
                         $beginSectionTitle = true;
-                    }
+                    } // End 見出し -----------
+                    
+                    // --- List ----------------------------                     
                     elseif(preg_match("/^\*/", $blocks[$j]) === 1){
 
 
-                        $blocks[$j] = substr($blocks[$j], 1);
-                        // if($beginList){
-                        //     $output .= "</li>";
-                        // }
 
                         if(!$beginList){
                             $output .= "<ul>";
@@ -433,11 +405,15 @@ class OutlineText{
                         }
 
                         $output .= "<li>";
-                        $beginListItem = true;
-                    }
-                    elseif(preg_match("/^\+/", $blocks[$j]) === 1){
 
-                        $blocks[$j] = substr($blocks[$j], 1);
+
+                        $output .= static::DecodeSpanElements(substr($blocks[$j], 1));
+                        
+                        $beginListItem = true;
+                    } // End List --------------------
+
+                    // --- Tree ------------------------------                    
+                    elseif(preg_match("/^\+/", $blocks[$j]) === 1){
 
                         if(!$beginList){
                             $output .= "<ul class='Tree'>";
@@ -445,17 +421,29 @@ class OutlineText{
                             $beginList = true;
                         }
 
+                        
                         $output .= "<li>";
+
+
+                        $output .= static::DecodeSpanElements(substr($blocks[$j], 1));
+                        
                         $beginListItem = true;
-                    }
+                    } // End Tree -----------------------
+
+                    // --- Figure Image -------------------------
                     elseif(preg_match("/^!\[(.*)?\]\((.*)?\)/", $blocks[$j],$matches)){
                         //$temp = substr($blocks[$j], 0, $matches[0][1]);
                         $temp = "<figure><img src='" . $matches[2] . "' alt='". 
-                                   $matches[1] ."'/><figcaption>" . $matches[1] . "</figcaption></figure>";
+                            $matches[1] ."'/><figcaption>" . 
+                            $matches[1] . "</figcaption></figure>";
+
                         //$temp .= substr($blocks[$j], $matches[0][1] + strlen($matches[0][0]));
                         
-                        $blocks[$j] = $temp;
+                        $output .= $temp;
                     }
+                    // End Figure Image -------------------
+
+                    // --- Table ----------------------------------
                     elseif(($ret = static::CheckTableLine($blocks[$j], $matches)) != -1){
                     
                         $temp = "";
@@ -464,7 +452,7 @@ class OutlineText{
                             $output .= "<table>";
 
                             if($ret == -3){
-                                $output .= "<caption>" . $matches[0] . "</caption>";
+                                $output .= "<caption>" . static::DecodeSpanElements($matches[0]) . "</caption>";
                             }
 
                             $output .= "<thead>";
@@ -497,7 +485,7 @@ class OutlineText{
                                 }
 
 
-                                $temp .= $matches[$k];
+                                $temp .= static::DecodeSpanElements($matches[$k]);
 
                                 if( ($beginTableBody && $k < $tableColumnHeadCount)  || !$beginTableBody){
                                     $temp .= "</th>";
@@ -509,26 +497,33 @@ class OutlineText{
 
                         }
 
-                        
-                        $blocks[$j] = $temp;
-                    }
+                        $output .= $temp;
+                    } // End Table ----------
+
+                    // --- Code block ----------------------
+                    elseif(preg_match("/^```(.*)/", $blocks[$j],$matches)){
+                
+                        // Code block に入る
+                        //var_dump($matches);
+                        $output .= "<pre class='brush: ". $matches[1] . ";'>";
+
+                        $beginCodeBlock = true;
+                    
+                    } // End Code block ------------------
+                    
                     else {
                         if(!$beginParagraph){
                             
-                            //if(!$alreadySectionTagSetted && $indentLevel > $indentLevelPrev){
-                            //    $output .= "<ul class='SectionList'> <li>";
-                            //    $alreadySectionTagSetted = true;
-                            //}
-                            
-                            //if(!$alreadySectionTagSetted && $indentLevel < $indentLevelPrev){
-                            //    $output .= "</li> </ul>";
-                            //    $alreadySectionTagSetted = true;
-                            //}
 
                             $output .= "<p>";
+
+                            $output .= static::DecodeSpanElements($blocks[$j]);
                             $beginParagraph = true;
 
 
+                        }
+                        else{
+                            $output .= static::DecodeSpanElements($blocks[$j]);
                         }
                     }
 
@@ -536,46 +531,34 @@ class OutlineText{
 
 
                 } // End 行頭処理 -----------
+                
+                // 
+                else{
 
+                    $output .= static::DecodeSpanElements($blocks[$j]);
+                }
                 
                 //echo $blocks[$j];
 
-                
+            
 
-                // 行内token処理
-
-                $matches = array();
-
-                if(preg_match("/\[(.*)?\]\((.*)?\)/", $blocks[$j],$matches, PREG_OFFSET_CAPTURE)){
-                    $temp = substr($blocks[$j], 0, $matches[0][1]);
-                    $temp .= "<a href='" . $matches[2][0] . "'>" . $matches[1][0] . "</a>";
-                    $temp .= substr($blocks[$j], $matches[0][1] + strlen($matches[0][0]));
-                        
-                    $blocks[$j] = $temp;
-                }
-
-
-
-
-                $output .= $blocks[$j];
 
             }
+
+            // --- 行末処理 ----------------------------------------
 
             if($beginSectionTitle){
                 $output .= "</h" . ($indentLevel + 2) . ">";
             }
 
-            // if($beginListItem){
-            
-            //     $output .= "</li>";
-            // }
 
             if($beginTableRow){
                 $output .= "</tr>";
             }
 
-
+            
             $output .= "\n";
+            // End 行末処理 --------------------
 
         } // End 各行ごとに対して
         
@@ -613,6 +596,74 @@ class OutlineText{
         //Debug::Log($output);
 
         return $output;
+    }
+
+
+
+    
+
+    private static function DecodeSpanElements($text){
+        
+        $matches = array();
+
+        if(preg_match_all("/\[(.*)?\]\((.*)?\)/", $text,$matches, PREG_OFFSET_CAPTURE)){
+            // $temp = substr($text, 0, $matches[0][1]);
+            // $temp .= "<a href='" . $matches[2][0] . "'>" . $matches[1][0] . "</a>";
+            // $temp .= substr($text, $matches[0][1] + strlen($matches[0][0]));
+            
+            // return $temp;
+
+
+            $output = "";
+            $matchedCount = count($matches[0]);
+            $offset = 0;
+
+            for($i = 0; $i < $matchedCount; $i++){
+                
+
+                $output .= substr($text, $offset, $matches[0][$i][1] - $offset);
+                $output .= "<a href='" . $matches[2][$i][0] . "'>" . $matches[1][$i][0] . "</a>";
+                $offset = $matches[0][$i][1] +  strlen($matches[0][$i][0]);
+                
+            }
+            $output .= substr($text, $offset);
+           
+
+            return $output;
+        }
+        elseif(preg_match_all("/`([^`]+)`/", $text,$matches, PREG_OFFSET_CAPTURE)){
+            //var_dump($matches);
+            $output = "";
+            $matchedCount = count($matches[0]);
+            $offset = 0;
+
+            for($i = 0; $i < $matchedCount; $i++){
+                $output .= substr($text, $offset, $matches[0][$i][1] - $offset);
+                $output .= "<code>" . $matches[1][$i][0] . "</code>";
+                $offset = $matches[0][$i][1] +  strlen($matches[0][$i][0]);
+                
+            }
+            $output .= substr($text, $offset);
+           
+
+            return $output;
+        }
+        else{
+            return $text;
+        }
+
+        
+
+        return "";
+    }
+
+    private static function EscapeSpecialCharacters($text){
+        $text = str_replace("&", "&amp;", $text);
+        $text = str_replace("<", "&lt;", $text);
+        $text = str_replace(">", "&gt;", $text);
+
+        return $text;
+
     }
 
     //
@@ -692,7 +743,8 @@ class OutlineText{
 
     
 
-} // End class PlainWriting
+} // End class OutlineText
+
 
 
 ?>
