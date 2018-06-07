@@ -9,6 +9,8 @@
     $parentsMaxCount = 3;
     $brotherTitleMaxStrWidth = 40;
 
+    $plainTextMode = false;
+
 
     $key =$rootContentPath;
     if(isset($_GET['content']))
@@ -31,6 +33,10 @@
         header("Location: {$url}");
 
         exit();
+    }
+
+    if(isset($_GET['plainText'])){
+        $plainTextMode = true;
     }
 
     $currentContent = new Content();
@@ -104,6 +110,17 @@
 
     }
 
+
+    if($plainTextMode && $isGetCurrentContent){
+        echo "<!DOCTYPE html><html lang='ja'><head></head><body>";
+        echo "<pre style='word-wrap: break-word; white-space: pre-wrap'>";
+        echo htmlspecialchars(file_get_contents($key . ".content"));
+        echo "</pre>";
+        echo "</body></html>";
+        exit();
+    }
+
+
     ?>
 
 
@@ -151,6 +168,7 @@
 </head>
 
 <body>
+
     <div id="HeaderArea">
         <a href="./?content=./Contents/Root">ContentsViewer</a>
     </div>
@@ -160,7 +178,6 @@
     <?php
 
 
-    
     //CurrentContentを取得したかどうか
 
 
@@ -196,6 +213,8 @@
         //}
         exit();
     }
+
+
     //---Navigator作成---------------------------------------------------------------------------------------------------
     $navigator = "";
     $navigator.= "<div class='Navi'>";
@@ -212,10 +231,11 @@
     echo "</div>";
 
 
-    // --- IndexArea ----------------------------------------------------------------------------
-    echo "<div id = 'IndexArea'>";
+    // --- RightSideArea ----------------------------------------------------------------------------
+    echo "<div id = 'RightSideArea'>";
     echo "Index";
     echo "<div class='Navi'></div>";
+    echo "<a href='" . CreateHREFForPlainTextMode() . "'>このページのソースコードを表示</a>";
     echo "</div>";
 
 
@@ -293,6 +313,7 @@
 
     //---MainPageBottomAppearingOnSmallScreen----------------------------------
     echo "<div id='MainPageBottomAppearingOnSmallScreen'>";
+    echo "<a href='" . CreateHREFForPlainTextMode() . "'>このページのソースコードを表示</a>";
 
     echo $navigator;
 
@@ -369,6 +390,12 @@
     function CreateHREF($contentPath)
     {
         return '/?content=' . $contentPath;
+    }
+
+    function CreateHREFForPlainTextMode(){
+        $query = $_SERVER["QUERY_STRING"] . "&plainText";
+
+        return "?" . $query;
     }
 
     function CreateNavHelper(&$parents, $parentsIndex, &$currentContent, &$children,  &$navigator){

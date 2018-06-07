@@ -82,27 +82,19 @@ class OutlineText{
     }
 
 
-    public static function Decode($text){
+    public static function Decode($plainText){
         $output = "";
 
+        $chunkList = static::SplitToChunk($plainText);
 
+        // $output .= "<pre>";
+        // $output .= var_dump($chunkList);
+        // $output .= "</pre>";
 
-        //$patternForSplitBlock ="/(<script>)|(</sript>)/i";
-        //echo htmlspecialchars($patternForSplitBlock);
+        // --- 複数のチャンクをまたいで存在する情報 ----
 
-        $lines = explode("\n", $text);
-        $lineCount = count($lines);
-
-
-
-        // --- 複数行にまたがって存在する情報 -------------
         $indentLevelPrevious = -1;
-        $startSpaceCount = 0;
-        $tagBlockLevel = 0;
-
-        $isStartWriting = false;
-
-        //$emptyLineCount = 0;
+        $indentLevel = 0;
 
         $beginParagraph = false;
         $beginList = false;
@@ -111,101 +103,83 @@ class OutlineText{
         $tableColumnHeadCount = 0;
         $beginTableBody = false;
         $beginCodeBlock = false;
-        
-        // End 複数行にまたがって存在する情報 --------------
+        $codeBlockIndentLevel = 0;
+        $beginSectionTitle = false;
+        $beginTableRow = false;
 
-        // 各行ごとに対して
-        for($i = 0; $i < $lineCount; $i++){
+        $skipNextLineChunk = false;
 
-            // --- 行ごとの情報 ----------------
-            
-            $indentLevel = 0;
-            $isEmpty = false;
-            $spaceCount = 0;
-            $beginSectionTitle = false;
-            $beginListItem = false;
-            $beginTableRow = false;
+        // End 複数のチャンクをまたいで存在する情報 ----
 
-            // End 行ごとの情報 ------------
-            
-            // 書き込みの始まりを確認
-            if(!$isStartWriting){
-                $wordCount = strlen($lines[$i]);
-                
-                for($startSpaceCount = 0; $startSpaceCount < $wordCount; $startSpaceCount++){
-                    if($lines[$i][$startSpaceCount] != ' '){
-                        break;
-                    }
-                }
-
-                if($startSpaceCount != $wordCount){
-                    $isStartWriting = true;
-                    //echo $lines[$i] . "<br>";
-                }
-                
-            }
-
-            // まだ文章が始まっていないとき
-            if(!$isStartWriting){
-                continue;
-            }
+        // --- 各チャンクごとに対して -----------------------------------
+        $chunkCount = count($chunkList);
+        for($i = 0; $i < $chunkCount; $i++){
+            $chunk = $chunkList[$i];
 
 
-            // --- Code block ----------------------
-            
+
+
             if($beginCodeBlock){
-                $matches = array();
-                if(preg_match("/```(`*)/", $lines[$i],$matches)){
-                    // Code block から出る
+                if($chunk["indentLevel"] == $codeBlockIndentLevel 
+                    && preg_match("/^```*/", $chunk["content"],$matches) === 1){
+                    
                     $output .= "</pre>";
-
                     $beginCodeBlock = false;
+
+
                 }
                 else{
-                    $output .= static::EscapeSpecialCharacters($lines[$i]) . "\n";
-                
+                    //echo $codeBlockIndentLevel;
+
+                    if($chunk["indentLevel"] == -1){
+                        if($chunk["content"] == ""){
+                            $output .= "\n";
+                        }
+                    }
+                    else{
+                        for($j = 0; $j < $chunk["spaceCount"]; $j++){
+                            $output .= " ";
+                        }
+                    }
+
+                    $output .= static::EscapeSpecialCharacters($chunk["content"]) . "\n";
+
+
                 }
-                //$output .= $lines[$i] . "\n";
-                
+
                 continue;
-            }
 
-            // End Code block -------
-
-            // --- indentLevelの計算 -----------------------------
-            $wordCount = strlen($lines[$i]);
-            $spaceCount = 0;
-            for($spaceCount = 0; $spaceCount < $wordCount; $spaceCount++){
-                if($lines[$i][$spaceCount] != ' '){
-                    break;
-                }
             }
 
 
-            // すべて, Spaceのとき
-            if($spaceCount == $wordCount){
-                $isEmpty = true;
-                //echo "em";
-            }
 
-            $indentLevel = ($spaceCount - $startSpaceCount) / static::$indentSpace;
-            //echo $startSpaceCount;
-
-            // End indentLevelの計算 ------------------------
+            // インデントレベル値が設定されていない.
+            // これの可能性は,
+            //  * plaintextで文中のとき
+            //  * 空白行のとき
+            if($chunk["indentLevel"] == -1){
+                
+                $output .= $chunk["content"];
 
 
 
 
+                // 空白行のとき
+                if($chunk["content"] == ""){
+                            
+                    if($beginSectionTitle){
+                        $output .= "</h" . ($indentLevel + 2) . ">";
+                        $beginSectionTitle = false;
+                    }
 
-            // 何もこの行に書かれていないとき
-            if($isEmpty){
-                if($tagBlockLevel > 0){
-                    $output .= $lines[$i] . "\n";
-                }    
+
+                    if($beginTableRow){
+                        $output .= "</tr>";
+                        $beginTableRow = false;
+                    }
 
 
-                // TagBlock内でないとき
-                else{
+
                     if($beginParagraph){
                         $output .= "</p>";
                         $beginParagraph = false;
@@ -235,335 +209,294 @@ class OutlineText{
                     }
                 }
 
+
                 continue;
             }
 
-
-
-
-
-
-            //echo $startSpaceCount;
-
-
-            $blocks = preg_split(static::$patternForSplitBlock, $lines[$i],-1,PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
-            //var_dump($blocks);
-            $blockCount = count($blocks);
-            
-            //Debug::Log($blocks);
-            
-
-            
-            for($j = 0; $j < $blockCount; $j++){
-                
-                $isTag = false;
-
-
-                if(preg_match(static::$patternTagBlockStartTag, $blocks[$j]) === 1){
-                
-                
-                    $tagBlockLevel++;
-                    $isTag = true;
-                }
-
-                if(preg_match(static::$patternTagBlockEndTag, $blocks[$j]) === 1){
-                
-                    $tagBlockLevel--;
-                    $isTag = true;
-                }
-
+            if($skipNextLineChunk){
+                //echo "sasasad";
                 
 
-                // 処理対象のブロックがtagBlock内にあるもの, tagそのもののの場合は, 処理から外す.
-                if($tagBlockLevel > 0 || $isTag){
+                $skipNextLineChunk = false;
 
-                    $output .= $blocks[$j];
-                    continue;
-                }
-
-                // --- ここから, OutlineTextのDecode処理が行われる. -------------------------------
-
-                //Debug::Log( $blocks[$j]);
-                
-                // はじめのブロック; 行頭に対して
-                if($j == 0){
-                    
-                    
-
-                    //
-                    // インデントレベルの変化を見る
-                    //
-                    // 処理過程
-                    //  リストブロック中である
-                    //   リストアイテムのレベルを変更する
-                    //
-                    //  その他
-                    //   セクションのレベルを変更する
-                    // 
-                    // 行頭がSpaceのみの場合でも, 
-                    // インデントレベル変更によるセクションタグの作成が起こる可能性がある.
-
-                    // 右へインデント
-                    $indentLevelDiff = $indentLevel - $indentLevelPrevious;
-                    if($indentLevel > $indentLevelPrevious){
-                        $levelDiff = $indentLevel - $indentLevelPrevious;
-
-                        while($levelDiff > 0){
-                            //echo "->:" . $blocks[$j];
-
-                            if($beginList){
-                                $output .= "<ul>";
-                                $listItemIndentLevel++;
-                            }else{
-                                $output .= "<div class='Section'>";
-                            }
-
-
-                            $levelDiff--;
-                        }
-                        
-                    }
-
-                    // 左へインデント
-                    if($indentLevel < $indentLevelPrevious){
-                        $levelDiff = $indentLevelPrevious - $indentLevel;
-                        if($beginList){
-                            $output .= "</li>";
-                        }
-
-                        while($levelDiff > 0){
-                            //echo "<-:" . $blocks[$j];
-
-
-                            if($beginList){
-                                $output .= "</ul></li>";
-                                $listItemIndentLevel--;
-                            }else{
-                                $output .= "</div>";
-                            }
-
-
-
-                            $levelDiff--;
-                        }
-                    }
-                    
-                    // インデントそのまま
-                    if($indentLevel == $indentLevelPrevious){
-                        if($beginList){
-                            $output .= "</li>";
-                        }
-                    }
-
-                    $indentLevelPrevious = $indentLevel;
-
-                    // spaceを取り除く
-                    $blocks[$j] = substr($blocks[$j], $spaceCount);
-
-                    // spaceを取り除いて, 何も残らなかった場合
-                    if(strlen($blocks[$j]) == 0){
-                        continue;
-                    }
-
-                    
-
-
-                    $ret = 0;
-                    $matches = array();
-                    
-                    // --- 見出し --------------------                    
-                    if(preg_match("/^#/", $blocks[$j]) === 1){
-                        
-                        $output .= "<h" . ($indentLevel + 2) . " ";
-                        if($indentLevel <= 0){
-                            $output .= "class = 'SectionTitle'>";
-                        }
-                        elseif($indentLevel == 1){
-                            $output .= "class = 'SubSectionTitle'>";
-                        }
-                        elseif($indentLevel == 2){
-                            $output .= "class = 'SubSubSectionTitle'>";
-                        }
-                        else{
-                            $output .= "class = 'SubSubSubSectionTitle'>";
-                        }
-
-                        $output .= static::DecodeSpanElements(substr($blocks[$j], 1));
-
-                        $beginSectionTitle = true;
-                    } // End 見出し -----------
-                    
-                    // --- List ----------------------------                     
-                    elseif(preg_match("/^\*/", $blocks[$j]) === 1){
-
-
-
-                        if(!$beginList){
-                            $output .= "<ul>";
-                            $listItemIndentLevel = 0;
-                            $beginList = true;
-                        }
-
-                        $output .= "<li>";
-
-
-                        $output .= static::DecodeSpanElements(substr($blocks[$j], 1));
-                        
-                        $beginListItem = true;
-                    } // End List --------------------
-
-                    // --- Tree ------------------------------                    
-                    elseif(preg_match("/^\+/", $blocks[$j]) === 1){
-
-                        if(!$beginList){
-                            $output .= "<ul class='Tree'>";
-                            $listItemIndentLevel = 0;
-                            $beginList = true;
-                        }
-
-                        
-                        $output .= "<li>";
-
-
-                        $output .= static::DecodeSpanElements(substr($blocks[$j], 1));
-                        
-                        $beginListItem = true;
-                    } // End Tree -----------------------
-
-                    // --- Figure Image -------------------------
-                    elseif(preg_match("/^!\[(.*)?\]\((.*)?\)/", $blocks[$j],$matches)){
-                        //$temp = substr($blocks[$j], 0, $matches[0][1]);
-                        $temp = "<figure><img src='" . $matches[2] . "' alt='". 
-                            $matches[1] ."'/><figcaption>" . 
-                            $matches[1] . "</figcaption></figure>";
-
-                        //$temp .= substr($blocks[$j], $matches[0][1] + strlen($matches[0][0]));
-                        
-                        $output .= $temp;
-                    }
-                    // End Figure Image -------------------
-
-                    // --- Table ----------------------------------
-                    elseif(($ret = static::CheckTableLine($blocks[$j], $matches)) != -1){
-                    
-                        $temp = "";
-
-                        if(!$beginTable){
-                            $output .= "<table>";
-
-                            if($ret == -3){
-                                $output .= "<caption>" . static::DecodeSpanElements($matches[0]) . "</caption>";
-                            }
-
-                            $output .= "<thead>";
-                            $beginTable = true;
-                        }
-
-                        if($ret == -2){
-                            $output .= "</thead>";
-                            $output .= "<tbody>";
-
-                            $beginTableBody = true;
-                        }
-
-
-                        if($ret >= 0){
-                            $beginTableRow = true;
-                            $tableColumnHeadCount = $ret;
-
-                            $output .= "<tr>";
-
-                            //echo $tableColumnHeadCount;
-                            //var_dump($matches);
-                            $tableElementCount = count($matches);
-                            for($k = 0; $k < $tableElementCount; $k++){
-                                if( ($beginTableBody && $k < $tableColumnHeadCount) || !$beginTableBody){
-                                    $temp .= "<th>";
-                                }
-                                else {
-                                    $temp .= "<td>";
-                                }
-
-
-                                $temp .= static::DecodeSpanElements($matches[$k]);
-
-                                if( ($beginTableBody && $k < $tableColumnHeadCount)  || !$beginTableBody){
-                                    $temp .= "</th>";
-                                }
-                                else {
-                                    $temp .= "</td>";
-                                }
-                            }
-
-                        }
-
-                        $output .= $temp;
-                    } // End Table ----------
-
-                    // --- Code block ----------------------
-                    elseif(preg_match("/^```(.*)/", $blocks[$j],$matches)){
-                
-                        // Code block に入る
-                        //var_dump($matches);
-                        $output .= "<pre class='brush: ". $matches[1] . ";'>";
-
-                        $beginCodeBlock = true;
-                    
-                    } // End Code block ------------------
-                    
-                    else {
-                        if(!$beginParagraph){
-                            
-
-                            $output .= "<p>";
-
-                            $output .= static::DecodeSpanElements($blocks[$j]);
-                            $beginParagraph = true;
-
-
-                        }
-                        else{
-                            $output .= static::DecodeSpanElements($blocks[$j]);
-                        }
-                    }
-
-
-
-
-                } // End 行頭処理 -----------
-                
-                // 
-                else{
-
-                    $output .= static::DecodeSpanElements($blocks[$j]);
-                }
-                
-                //echo $blocks[$j];
-
-            
-
-
+                continue;
             }
-
-            // --- 行末処理 ----------------------------------------
-
+            
             if($beginSectionTitle){
                 $output .= "</h" . ($indentLevel + 2) . ">";
+                $beginSectionTitle = false;
             }
 
 
             if($beginTableRow){
                 $output .= "</tr>";
+                $beginTableRow = false;
             }
 
-            
-            $output .= "\n";
-            // End 行末処理 --------------------
 
-        } // End 各行ごとに対して
-        
-        // すべての行の処理を終えた場合
-        // ファイルの終端に到達した.
+
+            //
+            // インデントレベルの変化を見る
+            //
+            // 処理過程
+            //  リストブロック中である
+            //   リストアイテムのレベルを変更する
+            //
+            //  その他
+            //   セクションのレベルを変更する
+            // 
+            // 行頭がSpaceのみの場合でも, 
+            // インデントレベル変更によるセクションタグの作成が起こる可能性がある.
+            $indentLevel = $chunk["indentLevel"];
+
+            // 右へインデント
+            if($indentLevel > $indentLevelPrevious){
+                $levelDiff = $indentLevel - $indentLevelPrevious;
+
+                while($levelDiff > 0){
+                    //echo "->:" . $blocks[$j];
+
+                    if($beginList){
+                        $output .= "<ul>";
+                        $listItemIndentLevel++;
+                    }else{
+                        $output .= "<div class='Section'>";
+                    }
+
+
+                    $levelDiff--;
+                }
+                
+            }
+
+            // 左へインデント
+            if($indentLevel < $indentLevelPrevious){
+                $levelDiff = $indentLevelPrevious - $indentLevel;
+                if($beginList){
+                    $output .= "</li>";
+                }
+
+                while($levelDiff > 0){
+                    //echo "<-:" . $blocks[$j];
+
+
+                    if($beginList){
+                        $output .= "</ul></li>";
+                        $listItemIndentLevel--;
+                    }else{
+                        $output .= "</div>";
+                    }
+
+
+
+                    $levelDiff--;
+                }
+            }
+            
+            // インデントそのまま
+            if($indentLevel == $indentLevelPrevious){
+                if($beginList){
+                    $output .= "</li>";
+                }
+            }
+
+            $indentLevelPrevious = $indentLevel;
+
+            // End インデントの変化を見る ---
+
+
+
+            // タグ要素
+            if($chunk["isTagElement"]){
+                $output .= $chunk["content"];
+
+                continue;
+            }
+
+
+            // 空文字の時
+            if($chunk["content"] == ""){
+                continue;
+            }
+            
+
+            $ret = 0;
+            $matches = array();
+            $header = "";
+            $nextLine = "";
+            if($chunk["nextLineChunkIndex"] != -1 && $chunkList[$chunk["nextLineChunkIndex"]]["indentLevel"] == $chunk["indentLevel"]){
+                $nextLine = $chunkList[$chunk["nextLineChunkIndex"]]["content"];
+            }
+            
+            // --- 見出し --------------------
+            if($ret = static::CheckHeaderLine($chunk["content"], $nextLine, $header)){
+                
+                $output .= "<h" . ($indentLevel + 2) . " ";
+                if($indentLevel <= 0){
+                    $output .= "class = 'SectionTitle'>";
+                }
+                elseif($indentLevel == 1){
+                    $output .= "class = 'SubSectionTitle'>";
+                }
+                elseif($indentLevel == 2){
+                    $output .= "class = 'SubSubSectionTitle'>";
+                }
+                else{
+                    $output .= "class = 'SubSubSubSectionTitle'>";
+                }
+
+                $output .= static::DecodeSpanElements($header);
+
+                if($ret == 2){
+                    $skipNextLineChunk = true;
+                }
+
+                $beginSectionTitle = true;
+            } // End 見出し -----------
+            
+            // --- List ----------------------------                     
+            elseif(preg_match("/^\*/", $chunk["content"]) === 1){
+
+
+
+                if(!$beginList){
+                    $output .= "<ul>";
+                    $listItemIndentLevel = 0;
+                    $beginList = true;
+                }
+
+                $output .= "<li>";
+
+
+                $output .= static::DecodeSpanElements(substr($chunk["content"], 1));
+                
+                $beginListItem = true;
+            } // End List --------------------
+
+            // --- Tree ------------------------------                    
+            elseif(preg_match("/^\+/", $chunk["content"]) === 1){
+
+                if(!$beginList){
+                    $output .= "<ul class='Tree'>";
+                    $listItemIndentLevel = 0;
+                    $beginList = true;
+                }
+
+                
+                $output .= "<li>";
+
+
+                $output .= static::DecodeSpanElements(substr($chunk["content"], 1));
+                
+                $beginListItem = true;
+            } // End Tree -----------------------
+
+            // --- Figure Image -------------------------
+            elseif(preg_match("/^!\[(.*)?\]\((.*)?\)/", $chunk["content"],$matches)){
+                //$temp = substr($blocks[$j], 0, $matches[0][1]);
+                $temp = "<figure><img src='" . $matches[2] . "' alt='". 
+                    $matches[1] ."'/><figcaption>" . 
+                    $matches[1] . "</figcaption></figure>";
+
+                //$temp .= substr($blocks[$j], $matches[0][1] + strlen($matches[0][0]));
+                
+                $output .= $temp;
+            }
+            // End Figure Image -------------------
+
+            // --- Table ----------------------------------
+            elseif(($ret = static::CheckTableLine($chunk["content"], $matches)) != -1){
+                
+
+                $temp = "";
+
+                if(!$beginTable){
+                    $output .= "<table>";
+
+                    if($ret == -3){
+                        $output .= "<caption>" . static::DecodeSpanElements($matches[0]) . "</caption>";
+                    }
+
+                    $output .= "<thead>";
+                    $beginTable = true;
+                }
+
+                if($ret == -2){
+                    $output .= "</thead>";
+                    $output .= "<tbody>";
+
+                    $beginTableBody = true;
+                }
+
+
+                if($ret >= 0){
+                    $beginTableRow = true;
+                    $tableColumnHeadCount = $ret;
+
+                    $output .= "<tr>";
+
+                    //echo $tableColumnHeadCount;
+                    //var_dump($matches);
+                    $tableElementCount = count($matches);
+                    for($k = 0; $k < $tableElementCount; $k++){
+                        if( ($beginTableBody && $k < $tableColumnHeadCount) || !$beginTableBody){
+                            $temp .= "<th>";
+                        }
+                        else {
+                            $temp .= "<td>";
+                        }
+
+
+                        $temp .= static::DecodeSpanElements($matches[$k]);
+
+                        if( ($beginTableBody && $k < $tableColumnHeadCount)  || !$beginTableBody){
+                            $temp .= "</th>";
+                        }
+                        else {
+                            $temp .= "</td>";
+                        }
+                    }
+
+                }
+
+                $output .= $temp;
+            } // End Table ----------
+
+            // --- Code block ----------------------
+            elseif(preg_match("/^```(.*)/", $chunk["content"],$matches) === 1){
+                
+                // code blockに入る
+                //var_dump($matches);
+                $output .= "<pre class='brush: ". $matches[1] . ";'>";
+
+                $beginCodeBlock = true;
+                $codeBlockIndentLevel = $indentLevel;
+            
+            
+            } // End Code block ------------------
+            
+            else {
+                if(!$beginParagraph){
+                    
+
+                    $output .= "<p>";
+
+                    $output .= static::DecodeSpanElements($chunk["content"]);
+                    $beginParagraph = true;
+
+
+                }
+                else{
+                    $output .= static::DecodeSpanElements($chunk["content"]);
+                }
+            }
+
+
+    
+        } // End 各チャンクごとに対して ----
+
+
+        // すべてのチャンクの処理を終えた場合
 
         if($beginParagraph){
             $output .= "</p>";
@@ -595,7 +528,10 @@ class OutlineText{
         }
         //Debug::Log($output);
 
+
+
         return $output;
+
     }
 
 
@@ -666,6 +602,258 @@ class OutlineText{
 
     }
 
+    private static function CreateChunk(){
+        return ["indentLevel" => -1, "spaceCount" => 0, "isTagElement" => false, "content" => "", "nextLineChunkIndex"=>-1];
+    }
+    private static function SplitToChunk($plainText){
+        
+        // chunkの追加のタイミング
+        //  * tagBlockから抜けたとき
+        //  * tagBlockに入ったとき
+        //  * tagBlock内ではなく and 行が変わったとき 
+        
+        $chunkList = array();
+        $chunk = static::CreateChunk();
+
+
+
+
+        $lines = explode("\n", $plainText);
+        $lineCount = count($lines);
+
+        
+        // --- 複数行にまたがって存在する情報 -------------
+        $startSpaceCount = 0;
+        $tagBlockLevel = 0;
+        $tagBlockLevelPrevious = 0;
+
+        $isStartWriting = false;
+
+        $chunkIndex = 0;
+        $lineStartChunkIndex = 0;
+
+        // End 複数行にまたがって存在する情報 ----
+
+        for($i = 0; $i < $lineCount; $i++){
+            
+            // 書き込みの始まりを確認
+            // 最初の空白文字の計算
+            if(!$isStartWriting){
+                $wordCount = strlen($lines[$i]);
+                
+                for($startSpaceCount = 0; $startSpaceCount < $wordCount; $startSpaceCount++){
+                    if($lines[$i][$startSpaceCount] != ' '){
+                        break;
+                    }
+                }
+
+                if($startSpaceCount != $wordCount){
+                    $isStartWriting = true;
+                    //echo $lines[$i] . "<br>";
+                }
+                
+            }
+
+            // まだ文章が始まっていないとき
+            if(!$isStartWriting){
+                continue;
+            }
+
+
+            
+            // --- indentLevelの計算 -----------------------------
+            $wordCount = strlen($lines[$i]);
+            $spaceCount = 0;
+            for($spaceCount = 0; $spaceCount < $wordCount; $spaceCount++){
+                if($lines[$i][$spaceCount] != ' '){
+                    break;
+                }
+            }
+
+            $isEmpty = false;
+            // すべて, Spaceのとき
+            if($spaceCount == $wordCount){
+                $isEmpty = true;
+                //echo "em";
+            }
+
+            $indentLevel = ($spaceCount - $startSpaceCount) / static::$indentSpace;
+            //echo $startSpaceCount;
+
+            // End indentLevelの計算 ------------------------
+
+            
+            // 空白行のとき
+            if($isEmpty){
+                if($tagBlockLevel > 0){
+                    $chunk["content"] .= "\n";
+                }
+                else{
+                    
+
+                    for($j = $lineStartChunkIndex; $j < $chunkIndex; $j++){
+                        $chunkList[$j]["nextLineChunkIndex"] = $chunkIndex;
+                    }
+                    $lineStartChunkIndex = $chunkIndex;
+                    
+                    $chunkIndex++;
+
+
+                    $chunkList[] = $chunk;
+                    $chunk = static::CreateChunk();
+
+
+                }
+
+                continue;
+            }
+
+            if($tagBlockLevel <= 0){
+                $chunk["indentLevel"] = $indentLevel;
+                $chunk["spaceCount"] = $spaceCount;
+            }
+
+            
+            $blocks = preg_split(static::$patternForSplitBlock, $lines[$i],-1,PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
+            //var_dump($blocks);
+            $blockCount = count($blocks);
+
+            
+            // --- ブロックごとの処理 ----
+            for($j = 0; $j < $blockCount; $j++){
+                
+                $isTag = false;
+
+
+                if(preg_match(static::$patternTagBlockStartTag, $blocks[$j]) === 1){
+                
+                    $tagBlockLevel++;
+                    $isTag = true;
+                }
+
+                if(preg_match(static::$patternTagBlockEndTag, $blocks[$j]) === 1){
+                
+                    $tagBlockLevel--;
+                    $isTag = true;
+                }
+
+
+                if($tagBlockLevel != $tagBlockLevelPrevious){
+
+                    // タグブロック内に入った
+                    if($tagBlockLevel > 0 && $tagBlockLevelPrevious <= 0){
+                        $chunkIndex++;
+
+                        $chunkList[] = $chunk;
+                        $chunk = static::CreateChunk();
+                        $chunk["isTagElement"] = true;
+                        
+                        $chunk["content"] .= $blocks[$j];
+                    }
+
+                    //　タグブロックから出た
+                    elseif($tagBlockLevel <= 0 && $tagBlockLevelPrevious > 0){
+                        $chunkIndex++;
+
+                        $chunk["content"] .= $blocks[$j];
+
+                        $chunkList[] = $chunk;
+                        $chunk = static::CreateChunk();
+                        $chunk["isTagElement"] = false;
+
+                    }
+
+                    // タグブロック内での変化
+                    else{
+                        
+                        $chunk["content"] .= $blocks[$j];
+                    }
+
+                    $tagBlockLevelPrevious = $tagBlockLevel;
+                }
+                
+                // タグブロックの変化がない 
+                else{
+                    if($tagBlockLevel <= 0){
+                        if($j == 0){
+                            $blocks[$j] = substr($blocks[$j], $spaceCount);
+                        }
+                        $chunk["content"] .= $blocks[$j];
+                    }
+                    else{
+    
+                        $chunk["content"] .= $blocks[$j];
+                    }
+                }
+
+
+                
+
+            } // End ブロックのごとの処理 ---
+
+            // 行の終わり & タグブロック内ではないとき
+            if($tagBlockLevel <= 0){
+                
+
+                for($j = $lineStartChunkIndex; $j < $chunkIndex; $j++){
+                    $chunkList[$j]["nextLineChunkIndex"] = $chunkIndex;
+                }
+                $lineStartChunkIndex = $chunkIndex;
+
+
+                $chunkIndex++;
+                
+                $chunkList[] = $chunk;
+                $chunk = static::CreateChunk();
+
+            }
+
+            // 行の終わり & タグブロック内のとき
+            else{
+                $chunk["content"] .= "\n";
+            }
+        } // End 各行ごとの処理 ---
+
+        return $chunkList;
+    }
+
+    private static function CheckHeaderLine($line, $nextLine, &$header){
+        $headHasHash = false;
+        $nextLineIsHorizontalLine = false;
+
+        if(preg_match("/^\#/", $line) === 1){
+            $headHasHash = true;
+            
+
+        }
+        
+        if(preg_match("/^---*$/", $nextLine) === 1
+                || preg_match("/^===*$/", $nextLine) === 1
+                || preg_match("/^___*$/", $nextLine) === 1){
+            $nextLineIsHorizontalLine = true;
+            
+        }
+
+        if($headHasHash || $nextLineIsHorizontalLine){
+            if($headHasHash){
+                $header = substr($line, 1);
+            }
+            else{
+                $header = $line;
+            }
+
+            if($nextLineIsHorizontalLine){
+                return 2;
+            }
+
+            return 1;
+        }
+
+
+
+        return 0;
+    }
+
     //
     // @return:
     //  -1: Not table
@@ -674,6 +862,13 @@ class OutlineText{
     //  over zero: column head count
     private static function CheckTableLine($line, &$matches){
         $matches = [];
+
+
+        // 空文字のとき
+        if($line == ""){
+            return -1;
+        }
+
 
         $temp = [];
         
@@ -737,6 +932,7 @@ class OutlineText{
             }
 
         }
+        //echo var_dump($blocks);
         return $columnHeadCount;
 
     }

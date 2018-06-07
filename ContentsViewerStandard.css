@@ -396,6 +396,13 @@ code{
 
 
 
+
+
+
+
+
+
+
 .Box {
     position: relative;
     margin: 2em 0;
@@ -429,6 +436,16 @@ code{
 
 
 
+
+
+
+
+
+
+
+
+
+
             
 /* 
 h1, h2, h3, h4, h5, h6 {
@@ -447,6 +464,9 @@ body {
     font-family: "arial";
 }
 
+a {
+    color: rgb(0, 102, 204);
+}
 
 
 #HeaderArea {
@@ -527,25 +547,27 @@ body {
     margin: 2em 0em;
 }
 
-#IndexArea {
+#RightSideArea {
     position: fixed;
     margin: 0px;
     top: 50px;
     right: 0px;
     width: 20%;
-    bottom: 50px;
+    bottom: 80px;
     background-color: white;
 }
 
-    #IndexArea div.Navi {
-        top: 2em;
+    #RightSideArea div.Navi {
+        /* top: 2em;
         right: 0px;
         left: 0px;
-        bottom: 0px;
+        bottom: 3em; */
+        height: 90%;
         font-size: 0.7em;
         margin: 0px;
         overflow-x: hidden;
-        position: absolute;
+        /* overflow: auto; */
+        /* position: absolute;  */
     }
 
 #MainPageBottomAppearingOnSmallScreen {
@@ -649,6 +671,7 @@ body {
     /* -khtml-user-select: none;  KHTML browsers (e.g. Konqueror) */
     -webkit-user-select: none; /* Chrome, Safari, and Opera */
     -webkit-touch-callout: none; /* Disable Android and iOS callouts*/
+
 }
 
 #BottomLeftArea:hover {
@@ -1030,7 +1053,7 @@ div.Navi {
         display: block;
     }
 
-    #IndexArea {
+    #RightSideArea {
         display: none;
     }
 

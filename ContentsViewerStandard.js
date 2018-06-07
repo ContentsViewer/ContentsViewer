@@ -29,7 +29,7 @@ window.onload = function () {
 	isTouchDevice = IsTouchDevice();
 
 	// --- indexArea関係 --------------------------------------------
-	var indexArea = document.getElementById("IndexArea");
+	var indexArea = document.getElementById("RightSideArea");
 	var indexAreaOnSmallScreen = document.getElementById("IndexAreaOnSmallScreen");
 	var mainContent = document.getElementById("MainContentField");
 
