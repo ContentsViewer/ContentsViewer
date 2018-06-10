@@ -15,9 +15,10 @@ class OutlineText{
 
         "table", "caption", "tbody", "thead", "tr", "td", "th",
 
-        "form", "input", "button", "textarea"
+        "form", "button", "textarea"
 
     ];
+
 
     //function __construct(){
         
@@ -29,7 +30,7 @@ class OutlineText{
 
 
 
-    private static $patternForSplitBlock;
+    private static $blockSeparators;
     private static $patternTagBlockStartTag;
     private static $patternTagBlockEndTag;
 
@@ -37,16 +38,18 @@ class OutlineText{
     public static function Init(){
     
         // ブロックごとに区切るためのpattern
-        static::$patternForSplitBlock = "/";
+        static::$blockSeparators = "/";
         $blockTagCount = count(static::$htmlTagList);
         for($i = 0; $i < $blockTagCount; $i++){
-            static::$patternForSplitBlock .= "(<" . static::$htmlTagList[$i] . "\b.*?>)|(<\/" . static::$htmlTagList[$i] . " *?>)";
+            static::$blockSeparators .= "(<" . static::$htmlTagList[$i] . "\b.*?>)|(<\/" . static::$htmlTagList[$i] . " *?>)";
             if($i < $blockTagCount - 1){
-                static::$patternForSplitBlock .= "|";
+                static::$blockSeparators .= "|";
             }
         }
 
-        static::$patternForSplitBlock .= "/i";
+        static::$blockSeparators .= "|(`)";
+
+        static::$blockSeparators .= "/i";
 
 
 
@@ -102,8 +105,8 @@ class OutlineText{
         $listItemIndentLevel = 0;
         $tableColumnHeadCount = 0;
         $beginTableBody = false;
-        $beginCodeBlock = false;
-        $codeBlockIndentLevel = 0;
+        // $beginCodeBlock = false;
+        // $codeBlockIndentLevel = 0;
         $beginSectionTitle = false;
         $beginTableRow = false;
 
@@ -116,40 +119,42 @@ class OutlineText{
         for($i = 0; $i < $chunkCount; $i++){
             $chunk = $chunkList[$i];
 
+            // if($chunk["isInlineCode"]){
+            //     echo var_dump($chunk);
+            // }
 
 
-
-            if($beginCodeBlock){
-                if($chunk["indentLevel"] == $codeBlockIndentLevel 
-                    && preg_match("/^```*/", $chunk["content"],$matches) === 1){
+            // if($beginCodeBlock){
+            //     if($chunk["indentLevel"] == $codeBlockIndentLevel 
+            //         && preg_match("/^```*/", $chunk["content"],$matches) === 1){
                     
-                    $output .= "</pre>";
-                    $beginCodeBlock = false;
+            //         $output .= "</pre>";
+            //         $beginCodeBlock = false;
 
 
-                }
-                else{
-                    //echo $codeBlockIndentLevel;
+            //     }
+            //     else{
+            //         //echo $codeBlockIndentLevel;
 
-                    if($chunk["indentLevel"] == -1){
-                        if($chunk["content"] == ""){
-                            $output .= "\n";
-                        }
-                    }
-                    else{
-                        for($j = 0; $j < $chunk["spaceCount"]; $j++){
-                            $output .= " ";
-                        }
-                    }
+            //         if($chunk["indentLevel"] == -1){
+            //             if($chunk["content"] == ""){
+            //                 $output .= "\n";
+            //             }
+            //         }
+            //         else{
+            //             for($j = 0; $j < $chunk["spaceCount"]; $j++){
+            //                 $output .= " ";
+            //             }
+            //         }
 
-                    $output .= static::EscapeSpecialCharacters($chunk["content"]) . "\n";
+            //         $output .= static::EscapeSpecialCharacters($chunk["content"]) . "\n";
 
 
-                }
+            //     }
 
-                continue;
+            //     continue;
 
-            }
+            // }
 
 
 
@@ -159,7 +164,20 @@ class OutlineText{
             //  * 空白行のとき
             if($chunk["indentLevel"] == -1){
                 
-                $output .= $chunk["content"];
+
+                    
+                if($chunk["isInlineCode"]){
+                    $output .= "<code>" . static::EscapeSpecialCharacters($chunk["content"]) . "</code>";
+                    // echo $chunk["content"];
+                }
+                else if($chunk["isTagElement"]){
+
+                    $output .= $chunk["content"];
+                }
+                else{
+                    $output .= static::DecodeSpanElements($chunk["content"]);
+                }
+
 
 
 
@@ -313,6 +331,23 @@ class OutlineText{
                 continue;
             }
 
+            
+            // --- Code block ----------------------
+            if($chunk["isCodeBlock"]){
+                
+                // code blockに入る
+                //var_dump($matches);
+                $output .= "<pre class='brush: ". $chunk["codeBlockAttribute"] . ";'>";
+
+                $output .= static::EscapeSpecialCharacters($chunk["content"]);
+
+                $output .= "</pre>";
+
+                continue;
+            
+            
+            } // End Code block ------------------
+
 
             // 空文字の時
             if($chunk["content"] == ""){
@@ -462,19 +497,6 @@ class OutlineText{
                 $output .= $temp;
             } // End Table ----------
 
-            // --- Code block ----------------------
-            elseif(preg_match("/^```(.*)/", $chunk["content"],$matches) === 1){
-                
-                // code blockに入る
-                //var_dump($matches);
-                $output .= "<pre class='brush: ". $matches[1] . ";'>";
-
-                $beginCodeBlock = true;
-                $codeBlockIndentLevel = $indentLevel;
-            
-            
-            } // End Code block ------------------
-            
             else {
                 if(!$beginParagraph){
                     
@@ -567,23 +589,23 @@ class OutlineText{
 
             return $output;
         }
-        elseif(preg_match_all("/`([^`]+)`/", $text,$matches, PREG_OFFSET_CAPTURE)){
-            //var_dump($matches);
-            $output = "";
-            $matchedCount = count($matches[0]);
-            $offset = 0;
+        // elseif(preg_match_all("/`([^`]+)`/", $text,$matches, PREG_OFFSET_CAPTURE)){
+        //     //var_dump($matches);
+        //     $output = "";
+        //     $matchedCount = count($matches[0]);
+        //     $offset = 0;
 
-            for($i = 0; $i < $matchedCount; $i++){
-                $output .= substr($text, $offset, $matches[0][$i][1] - $offset);
-                $output .= "<code>" . $matches[1][$i][0] . "</code>";
-                $offset = $matches[0][$i][1] +  strlen($matches[0][$i][0]);
+        //     for($i = 0; $i < $matchedCount; $i++){
+        //         $output .= substr($text, $offset, $matches[0][$i][1] - $offset);
+        //         $output .= "<code>" . $matches[1][$i][0] . "</code>";
+        //         $offset = $matches[0][$i][1] +  strlen($matches[0][$i][0]);
                 
-            }
-            $output .= substr($text, $offset);
+        //     }
+        //     $output .= substr($text, $offset);
            
 
-            return $output;
-        }
+        //     return $output;
+        // }
         else{
             return $text;
         }
@@ -603,7 +625,8 @@ class OutlineText{
     }
 
     private static function CreateChunk(){
-        return ["indentLevel" => -1, "spaceCount" => 0, "isTagElement" => false, "content" => "", "nextLineChunkIndex"=>-1];
+        return ["indentLevel" => -1, "spaceCount" => 0, "isTagElement" => false, "isCodeBlock" => false,
+         "content" => "", "nextLineChunkIndex"=>-1, "codeBlockAttribute" => "", "isInlineCode" => false];
     }
     private static function SplitToChunk($plainText){
         
@@ -631,6 +654,10 @@ class OutlineText{
 
         $chunkIndex = 0;
         $lineStartChunkIndex = 0;
+
+        $isInInlineCode = false;
+        $isInCodeBlock = false;
+        $codeBlockIndentLevel = 0;
 
         // End 複数行にまたがって存在する情報 ----
 
@@ -682,6 +709,52 @@ class OutlineText{
 
             // End indentLevelの計算 ------------------------
 
+            if($isInCodeBlock){
+
+                // コードブロックから出る
+                if($codeBlockIndentLevel == $indentLevel && preg_match("/^ *```(.*)/", $lines[$i], $matches) === 1){
+                    $isInCodeBlock = false;
+
+
+                    $chunkIndex++;
+                    $chunkList[] = $chunk;
+
+                    $chunk = static::CreateChunk();
+
+                    
+
+
+
+                    continue;
+                }
+
+                // コードブロック内の処理
+                else{
+
+                    $chunk["content"] .= $lines[$i] . "\n";
+                    
+
+                    continue;
+                }
+
+            }
+            else{
+
+                // コードブロック内に入る
+                if($tagBlockLevel <= 0 && preg_match("/ *```(.*)/", $lines[$i], $matches) === 1){
+                    $isInCodeBlock = true;
+                    $codeBlockIndentLevel = $indentLevel;
+                
+                    $chunk["indentLevel"] = $indentLevel;
+                    $chunk["spaceCount"] = $spaceCount;
+                    $chunk["isCodeBlock"] = true;
+                    $chunk["codeBlockAttribute"] = $matches[1];
+
+                    
+                    continue;
+                }
+            }
+            
             
             // 空白行のとき
             if($isEmpty){
@@ -714,13 +787,65 @@ class OutlineText{
             }
 
             
-            $blocks = preg_split(static::$patternForSplitBlock, $lines[$i],-1,PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
+            $blocks = preg_split(static::$blockSeparators, $lines[$i],-1,PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
             //var_dump($blocks);
             $blockCount = count($blocks);
 
+
+            $beginInlineCode = false;
             
             // --- ブロックごとの処理 ----
             for($j = 0; $j < $blockCount; $j++){
+
+                //echo $blocks[$j] . "\n";
+
+                if($beginInlineCode){
+
+                    // インラインコードから抜ける
+                    if($blocks[$j] == "`"){
+                        $beginInlineCode = false;
+
+
+                        $chunkIndex++;
+                        $chunkList[] = $chunk;
+                        //var_dump($chunk);
+                        
+                        $chunk = static::CreateChunk();
+
+
+
+
+                        continue;
+                    }
+
+                    // インラインコード内
+                    else{
+                        $chunk["content"] .= $blocks[$j];
+                        //echo $blocks[$j];
+                        continue;
+                    }
+
+                }
+                else{
+
+                    // インラインコードに入る
+                    if($tagBlockLevel <= 0 && $blocks[$j] == "`"){
+                        $chunkIndex++;
+
+                        $chunkList[] = $chunk;
+                        $chunk = static::CreateChunk();
+
+
+                        $beginInlineCode = true;
+
+                        $chunk["isInlineCode"] = true;
+
+                        //echo "34y";
+
+                        continue;
+                    }
+                }
+                
                 
                 $isTag = false;
 
@@ -813,6 +938,9 @@ class OutlineText{
                 $chunk["content"] .= "\n";
             }
         } // End 各行ごとの処理 ---
+
+
+        $chunkList[] = $chunk;
 
         return $chunkList;
     }
