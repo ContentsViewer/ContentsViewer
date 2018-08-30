@@ -1,6 +1,7 @@
 <?php
     include "ContentsDatabase.php";
     include "OutlineText.php";
+    include "ContentsViewerUtil.php";
 
     OutlineText::Init();
 
@@ -10,7 +11,6 @@
     $brotherTitleMaxStrWidth = 40;
 
     $plainTextMode = false;
-
 
     $key =$rootContentPath;
     if(isset($_GET['content']))
@@ -38,6 +38,7 @@
     if(isset($_GET['plainText'])){
         $plainTextMode = true;
     }
+
 
     $currentContent = new Content();
     $parents = [];
@@ -242,15 +243,36 @@
     ////---MainArea--------------------------------------------------------------------------------------------------------
     echo '<div id="MainArea">';
 
+    
     //最終更新欄
     echo '<div class="FileDateField">';
     echo "<img src='Common/CreatedAtStampA.png' alt='公開日'>: ". $currentContent->CreatedAt()
     . " <img src='Common/UpdatedAtStampA.png' alt='更新日'>: " . $currentContent->UpdatedAt();
     echo '</div>';
 
+
+    echo "<ul class='tag-links'>";
+    //echo $currentContent->Tags()[0];
+    foreach($currentContent->Tags() as $name){
+        echo "<li><a href='" . CreateTagDetailHREF($name) . "'>" . $name . "</a></li>";
+    }
+    echo "</ul>";
+
+
+
     // 概要欄
     echo '<div id="SummaryField" class="Summary">';
     echo $currentContent->Summary();
+
+    if($currentContent->IsRoot()){
+        Content::LoadGlobalTagMapMetaFile();
+        $tagMap = Content::GlobalTagMap();
+        echo CreateNewBox($tagMap);
+
+        
+        echo "<h2>タグ一覧</h2>";
+        echo CreateTagListElement($tagMap);
+    }
     echo '</div>';
     
     // 目次欄(小画面で表示される)
@@ -272,7 +294,7 @@
         //A-----
         echo "<div style='display: table-cell'>";
 
-        echo '<a class="LinkButtonBlock" href ="'.CreateHREF($children[$i]->Path()).'">';
+        echo '<a class="LinkButtonBlock" href ="'.CreateContentHREF($children[$i]->Path()).'">';
         echo $children[$i]->Title();
         echo '</a>';
 
@@ -335,7 +357,7 @@
         }
         else
         {
-            echo '<a  href ="'.CreateHREF($parents[$index]->Path()).'">';
+            echo '<a  href ="'.CreateContentHREF($parents[$index]->Path()).'">';
             echo $parents[$index]->Title();
             echo '</a>';
         }
@@ -358,7 +380,7 @@
 
         if($rightContent !== false)
         {
-            echo '<a id="BottomRightArea"  href ="'.CreateHREF($rightContent->Path()).'">';
+            echo '<a id="BottomRightArea"  href ="'.CreateContentHREF($rightContent->Path()).'">';
             echo  mb_strimwidth($rightContent->Title(), 0, $brotherTitleMaxStrWidth, "...", "UTF-8") . " &gt;";
             echo '</a>';
             //echo "<div id = 'RightContentContainer' class='ContentContainer'>";
@@ -375,7 +397,7 @@
 
         if($leftContent !== false)
         {
-            echo '<a id="BottomLeftArea" href ="'.CreateHREF($leftContent->Path()).'">';
+            echo '<a id="BottomLeftArea" href ="'.CreateContentHREF($leftContent->Path()).'">';
             echo  "&lt; ". mb_strimwidth($leftContent->Title(), 0, $brotherTitleMaxStrWidth, "...", "UTF-8");
             echo '</a>';
             //echo "<div id = 'LeftContentContainer' class='ContentContainer'>";
@@ -386,11 +408,6 @@
         }
     }
 
-    //contentPathからaタグで用いられる参照を返します
-    function CreateHREF($contentPath)
-    {
-        return '/?content=' . $contentPath;
-    }
 
     function CreateHREFForPlainTextMode(){
         $query = $_SERVER["QUERY_STRING"] . "&plainText";
@@ -402,14 +419,14 @@
         if($parentsIndex < 0){
 
             $navigator.=  "<li>";
-            $navigator.=  "<a class = 'Selected' href='" . CreateHREF($currentContent->Path()) . "'>" . $currentContent->Title() . "</a>";
+            $navigator.=  "<a class = 'Selected' href='" . CreateContentHREF($currentContent->Path()) . "'>" . $currentContent->Title() . "</a>";
             $navigator.=  "</li>";
 
             $navigator.="<ul>";
             foreach($children as $c){
 
                 $navigator.=  "<li>";
-                $navigator.=  "<a href='" . CreateHREF($c->Path()) . "'>" . $c->Title() . "</a>";
+                $navigator.=  "<a href='" . CreateContentHREF($c->Path()) . "'>" . $c->Title() . "</a>";
                 $navigator.=  "</li>";
             }
             $navigator.="</ul>";
@@ -420,7 +437,7 @@
         $childrenCount = $parents[$parentsIndex]->ChildCount();
 
         $navigator.=  "<li>";
-        $navigator.=  "<a class = 'Selected' href='" . CreateHREF($parents[$parentsIndex]->Path()) . "'>" . $parents[$parentsIndex]->Title() . "</a>";
+        $navigator.=  "<a class = 'Selected' href='" . CreateContentHREF($parents[$parentsIndex]->Path()) . "'>" . $parents[$parentsIndex]->Title() . "</a>";
         $navigator.=  "</li>";
 
         $navigator.=  "<ul>";
@@ -435,20 +452,20 @@
 
                 if($i == $currentContentIndex){
                     $navigator.=  "<li>";
-                    $navigator.=  "<a class = 'Selected' href='" . CreateHREF($child->Path()) . "'>" . $child->Title() . "</a>";
+                    $navigator.=  "<a class = 'Selected' href='" . CreateContentHREF($child->Path()) . "'>" . $child->Title() . "</a>";
                     $navigator.=  "</li>";
 
                     $navigator.="<ul>";
                     foreach($children as $c){
                         $navigator.=  "<li>";
-                        $navigator.=  "<a href='" . CreateHREF($c->Path()) . "'>" . $c->Title() . "</a>";
+                        $navigator.=  "<a href='" . CreateContentHREF($c->Path()) . "'>" . $c->Title() . "</a>";
                         $navigator.=  "</li>";
                     }
                     $navigator.="</ul>";
                 }
                 else{
                     $navigator.=  "<li>";
-                    $navigator.=  "<a href='" . CreateHREF($child->Path()) . "'>" . $child->Title() . "</a>";
+                    $navigator.=  "<a href='" . CreateContentHREF($child->Path()) . "'>" . $child->Title() . "</a>";
                     $navigator.=  "</li>";
                 }
             }
@@ -466,7 +483,7 @@
                         continue;
                     }
                     $navigator.=  "<li>";
-                    $navigator.=  "<a href='" . CreateHREF($child->Path()) . "'>" . $child->Title() . "</a>";
+                    $navigator.=  "<a href='" . CreateContentHREF($child->Path()) . "'>" . $child->Title() . "</a>";
                     $navigator.=  "</li>";
                 }
             }

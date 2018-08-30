@@ -50,20 +50,27 @@
 class Content
 {
 
-    private static $tagMap =
+    private static $elementTagMap =
     [
         "Header" => ["StartTag" => "<Header>", "EndTag" => "</Header>"],
         "Parent" => ["StartTag" => "<Parent>", "EndTag" => "</Parent>"],
         "Child" => ["StartTag" => "<Child>", "EndTag" => "</Child>"],
         "Title" => ["StartTag" => "<Title>", "EndTag" => "</Title>"],
         "CreatedAt" => ["StartTag" => "<CreatedAt>", "EndTag" => "</CreatedAt>"],
-        "Summary" => ["StartTag" => "<Summary>", "EndTag" => "</Summary>"]
+        "Summary" => ["StartTag" => "<Summary>", "EndTag" => "</Summary>"],
+        "Tag" => ["StartTag" => "<Tag>", "EndTag" => "</Tag>"]
     ];
 
 
     private static $dateFormat = "Y/m/d";
 
     private static $contentFileExtension = ".content";
+
+    private static $globalTagMapMetaFileName = "GlobalTagMap.meta";
+    
+    private static $globalTagMap = NULL;
+
+
 
     // コンテンツファイルへのパス.
     private $path = "";
@@ -79,6 +86,84 @@ class Content
     //各childへのfilePathList
     private $childPathList = array();
 
+    private $tags = array();
+
+    public static function GlobalTagMap()
+    {
+        return static::$globalTagMap;
+    }
+
+    public static function CreateGlobalTagMap($rootContentPath)
+    {
+        $content = new Content();
+        
+        $contentPathStack = [];
+        $contentPathStack[] = $rootContentPath;
+
+        static::$globalTagMap = [];
+        
+        while(count($contentPathStack) > 0){
+            //var_dump($contentPathStack);
+            if( !$content->SetContent(array_pop($contentPathStack)) ){
+                
+                continue;
+            }
+
+
+            $tagsCount = count($content->Tags());
+            for($i = 0; $i < $tagsCount; $i++){
+                if(array_key_exists($content->Tags()[$i], static::$globalTagMap)){
+                    //echo $content->Path() . "<br/>";
+                    static::$globalTagMap[$content->Tags()[$i]][] = $content->Path();
+                }
+                else{
+                    //echo $content->Path(). "<br/>";
+                    static::$globalTagMap[$content->Tags()[$i]] = [];
+                    
+                    static::$globalTagMap[$content->Tags()[$i]][] = $content->Path();
+                }
+
+
+            }
+
+
+            $childPathListCount = count($content->ChildPathList());
+            for($i = 0; $i < $childPathListCount; $i++){
+                $childPath = static::RelativePath(realpath(dirname($content->Path() . static::$contentFileExtension) . "/" 
+                             . $content->ChildPathList()[$i] . static::$contentFileExtension));
+
+                $childPath = substr($childPath, 0, strrpos($childPath, '.'));
+                $contentPathStack[] = $childPath;
+                //echo $childPath;;
+            }
+
+
+        }
+
+        //var_dump(static::$globalTagMap);
+
+    }
+
+    public static function SaveGlobalTagMapMetaFile()
+    {
+        
+        $encoded = json_encode(static::$globalTagMap);
+        file_put_contents(static::$globalTagMapMetaFileName , $encoded);
+    }
+
+    public static function LoadGlobalTagMapMetaFile()
+    {
+        if(file_exists(static::$globalTagMapMetaFileName)){
+            $json = file_get_contents(static::$globalTagMapMetaFileName);
+            $json = mb_convert_encoding($json, 'UTF8', 'ASCII,JIS,UTF-8,EUC-JP,SJIS-WIN');
+            static::$globalTagMap = json_decode($json,true);
+        }
+    }
+
+    public function Tags()
+    {
+        return  $this->tags;
+    }
 
 
     //このContentがあったファイルのパスを取得
@@ -261,6 +346,7 @@ class Content
         $this->body = "";
         $this->childPathList = array();
         $this->parentPath = "";
+        $this->tags = array();
 
 
 
@@ -275,7 +361,7 @@ class Content
             
             if($isInHeader){
                 // Header内にある場合はHeaderの終了タグを検索する.
-                if(strpos($lines[$i], static::$tagMap['Header']['EndTag']) !== false){
+                if(strpos($lines[$i], static::$elementTagMap['Header']['EndTag']) !== false){
                     $isInHeader = false;
                     continue;
                 }
@@ -283,7 +369,7 @@ class Content
 
             else{
                 // Header内にないときはHeaderの開始タグを検索する.
-                if(strpos($lines[$i], static::$tagMap['Header']['StartTag']) !== false){
+                if(strpos($lines[$i], static::$elementTagMap['Header']['StartTag']) !== false){
                     $isInHeader = true;
                     continue;
                     
@@ -294,7 +380,7 @@ class Content
             if($isInHeader){
             
                 if($isInSummary){
-                    if(strpos($lines[$i], static::$tagMap['Summary']['EndTag']) !== false){
+                    if(strpos($lines[$i], static::$elementTagMap['Summary']['EndTag']) !== false){
                         $isInSummary = false;
                         continue;
                     }
@@ -302,20 +388,20 @@ class Content
 
 
                 else{
-                
+                    
 
                     $position = 0;
 
-                    if(($position = strpos($lines[$i], static::$tagMap['Parent']['StartTag'])) !== false){
-                        $position += strlen(static::$tagMap['Parent']['StartTag']);
+                    if(($position = strpos($lines[$i], static::$elementTagMap['Parent']['StartTag'])) !== false){
+                        $position += strlen(static::$elementTagMap['Parent']['StartTag']);
 
                         $this->parentPath = substr($lines[$i], $position);
                         $this->parentPath = str_replace(" ", "", $this->parentPath);
 
                         continue;
                     
-                    } elseif(($position = strpos($lines[$i], static::$tagMap['Child']['StartTag'])) !== false){
-                        $position += strlen(static::$tagMap['Child']['StartTag']);
+                    } elseif(($position = strpos($lines[$i], static::$elementTagMap['Child']['StartTag'])) !== false){
+                        $position += strlen(static::$elementTagMap['Child']['StartTag']);
                         
                         $childPath = substr($lines[$i], $position);
                         $childPath = str_replace(" ", "", $childPath);
@@ -324,22 +410,35 @@ class Content
                         
                         continue;
 
-                    } elseif(($position = strpos($lines[$i], static::$tagMap['CreatedAt']['StartTag'])) !== false){
-                        $position += strlen(static::$tagMap['CreatedAt']['StartTag']);
+                    } elseif(($position = strpos($lines[$i], static::$elementTagMap['CreatedAt']['StartTag'])) !== false){
+                        $position += strlen(static::$elementTagMap['CreatedAt']['StartTag']);
                         
                         $this->createdAt = substr($lines[$i], $position);
                         $this->createdAt = str_replace(" ", "", $this->createdAt);
 
                         continue;
 
-                     } elseif(($position = strpos($lines[$i], static::$tagMap['Title']['StartTag'])) !== false){
-                        $position += strlen(static::$tagMap['Title']['StartTag']);
+                     } elseif(($position = strpos($lines[$i], static::$elementTagMap['Title']['StartTag'])) !== false){
+                        $position += strlen(static::$elementTagMap['Title']['StartTag']);
                         
                         $this->title = substr($lines[$i], $position);
-
+                        
                         continue;
 
-                    } elseif(($position = strpos($lines[$i], static::$tagMap['Summary']['StartTag'])) !== false){
+                    } elseif(($position = strpos($lines[$i], static::$elementTagMap['Tag']['StartTag'])) !== false){
+                        $position += strlen(static::$elementTagMap['Tag']['StartTag']);
+                        
+                        $tagsStr = substr($lines[$i], $position);
+                        $this->tags = explode(",", $tagsStr);
+                        $tagsCount = count($this->tags);
+                        
+                        for($j = 0; $j < $tagsCount; $j++){
+                            $this->tags[$j] = trim($this->tags[$j]);
+                        }
+        
+                        continue;
+
+                    } elseif(($position = strpos($lines[$i], static::$elementTagMap['Summary']['StartTag'])) !== false){
                         $isInSummary = true;
                         continue;
 
@@ -356,8 +455,6 @@ class Content
                 $this->body .= $lines[$i] . "\n";
             }
         }
-
-
 
         return true;
     }
@@ -398,7 +495,7 @@ class Content
     }
 
 
-    function RelativePath($dst) {
+    static function RelativePath($dst) {
         switch (false) {
             case $src = getcwd():
             case $dst = realpath($dst):

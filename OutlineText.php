@@ -90,9 +90,9 @@ class OutlineText{
 
         $chunkList = static::SplitToChunk($plainText);
 
-        // $output .= "<pre>";
-        // $output .= var_dump($chunkList);
-        // $output .= "</pre>";
+        //  $output .= "<pre>";
+        //  $output .= var_dump($chunkList);
+        //  $output .= "</pre>";
 
         // --- 複数のチャンクをまたいで存在する情報 ----
 
@@ -118,6 +118,12 @@ class OutlineText{
         $chunkCount = count($chunkList);
         for($i = 0; $i < $chunkCount; $i++){
             $chunk = $chunkList[$i];
+
+            $nextChunk = null;
+            if($i < $chunkCount - 1){
+                $nextChunk = $chunkList[$i + 1];
+            }
+
 
             // if($chunk["isInlineCode"]){
             //     echo var_dump($chunk);
@@ -350,8 +356,24 @@ class OutlineText{
 
 
             // 空文字の時
+            // インデント値はあるが, 空文字
+            // その次がインラインコード, html要素のときに起こる.
             if($chunk["content"] == ""){
-                continue;
+
+                // 次がインラインコードのときは, このまま処理を続ける.
+                // 次がインラインコードのとき, このまま処理を続けないと,
+                // <p></p>で囲まれない.
+                //
+                // 逆にその次が, html要素のときは, <p></p>で囲まれてしまい, 
+                // <p></p>で囲めない要素が来た時によろしくない.
+                if(!is_null($nextChunk) && $nextChunk["isInlineCode"]){
+                    
+                }
+                else{
+                    // 次がhtml要素などはこのまま処理を続けない.
+                    continue;
+                }
+                //continue;
             }
             
 
@@ -564,7 +586,7 @@ class OutlineText{
         
         $matches = array();
 
-        if(preg_match_all("/\[(.*)?\]\((.*)?\)/", $text,$matches, PREG_OFFSET_CAPTURE)){
+        if(preg_match_all("/\[(.*?)\]\((.*?)\)/", $text,$matches, PREG_OFFSET_CAPTURE)){
             // $temp = substr($text, 0, $matches[0][1]);
             // $temp .= "<a href='" . $matches[2][0] . "'>" . $matches[1][0] . "</a>";
             // $temp .= substr($text, $matches[0][1] + strlen($matches[0][0]));
@@ -628,6 +650,10 @@ class OutlineText{
         return ["indentLevel" => -1, "spaceCount" => 0, "isTagElement" => false, "isCodeBlock" => false,
          "content" => "", "nextLineChunkIndex"=>-1, "codeBlockAttribute" => "", "isInlineCode" => false];
     }
+
+
+
+
     private static function SplitToChunk($plainText){
         
         // chunkの追加のタイミング
