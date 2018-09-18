@@ -101,10 +101,10 @@ function CreateSectionTreeHelper(element, navi, idBegin) {
 
 
 		//alert("12");
-		if (element.children[i].className == "SectionTitle"
-			|| element.children[i].className == "SubSectionTitle"
-			|| element.children[i].className == "SubSubSectionTitle"
-			|| element.children[i].className == "SubSubSubSectionTitle") {
+		if (element.children[i].className == "section-title"
+			|| element.children[i].className == "sub-section-title"
+			|| element.children[i].className == "sub-sub-section-title"
+			|| element.children[i].className == "sub-sub-sub-section-title") {
 
 
 
@@ -124,7 +124,7 @@ function CreateSectionTreeHelper(element, navi, idBegin) {
 			idBegin++;
 
 			if (i + 1 < element.children.length
-				&& element.children[i + 1].className == "Section") {
+				&& element.children[i + 1].className == "section") {
 
 
 
