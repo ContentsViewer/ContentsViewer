@@ -332,12 +332,19 @@ class OutlineText{
             if($chunk["isCodeBlock"]){
                 
                 // code blockに入る
-                //var_dump($matches);
-                $output .= "<pre class='brush: ". $chunk["codeBlockAttribute"] . ";'>";
 
-                $output .= static::EscapeSpecialCharactersForce($chunk["content"]);
 
-                $output .= "</pre>";
+                if($chunk["codeBlockAttribute"] == "math"){
+                    $output .= "<div>";
+                    $output .= $chunk["content"];
+                    $output .= "</div>";
+                }
+                else{
+                    $output .= "<pre class='brush: ". $chunk["codeBlockAttribute"] . ";'>";
+                    $output .= static::EscapeSpecialCharactersForce($chunk["content"]);
+                    $output .= "</pre>";
+                }
+
 
                 continue;
             
