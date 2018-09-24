@@ -1,14 +1,4 @@
 ﻿
-
-
-
-
-
-
-
-
-
-
 h1, h2, h3, h4, h5, h6 {
     font-size: larger;
     margin-bottom: 0px;
@@ -218,4 +208,32 @@ mark{
 }
 
 
+
+
+
+.box {
+    position: relative;
+    margin: 2em 0;
+    padding: 0.5em 1em;
+    border: solid 3px #95ccff;
+    border-radius: 8px;
+}
+
+    .box .box-title {
+        position: absolute;
+        display: inline-block;
+        top: -13px;
+        left: 10px;
+        padding: 0 9px;
+        line-height: 1;
+        font-size: 19px;
+        background: #F8F8FF;
+        color: #95ccff;
+        font-weight: bold;
+    }
+/* 
+    .box p {
+        margin: 0;
+        padding: 0;
+    } */
 

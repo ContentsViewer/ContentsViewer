@@ -3,7 +3,7 @@
     include "OutlineText.php";
     include "ContentsViewerUtil.php";
 
-    OutlineText::Init();
+    OutlineText\Parser::Init();
 
     $rootContentPath = 'Contents/Root';
     $contentsDataBaseURL = 'ContentsDataBase.php';
@@ -57,8 +57,8 @@
         //echo $isOldURL ? "true" : "false";
         
         // CurrentContentのSummaryとBodyをDecode
-        $currentContent->SetSummary(OutlineText::Decode($currentContent->Summary()));
-        $currentContent->SetBody(OutlineText::Decode($currentContent->Body()));
+        $currentContent->SetSummary(OutlineText\Parser::Parse($currentContent->Summary()));
+        $currentContent->SetBody(OutlineText\Parser::Parse($currentContent->Body()));
 
         //ChildContentsの取得
         $childrenPathList = $currentContent->ChildPathList();
